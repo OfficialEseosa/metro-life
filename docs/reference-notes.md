@@ -24,3 +24,7 @@ Metro Life choices: free map viewing has a persistent "visiting this map" notice
 M5–M7 studies will be added at each milestone start.
 
 ## Owner HUD redesign — source study before implementation
+
+## M5 — careers and chained choices
+Metro keeps SPEC's simpler five levels, visible shifts/skills requirements, and completion-time promotions. Seven distinct six-step aspirations use durable claims, preventing switching dreams from repeating rewards. It does not copy internal grades or long tenure gates.
+Metro uses original three-beat city stories triggered by completed activities. A labelled skill route pays more; a collaborative route needs no skill level. Missed checks still continue with practice XP. Server validation protects pending IDs, choices and once-only outcomes, scoped by world. No captured dialogue, names or advertiser content reused. Live pacing, original server authority and original persistence were not established by this static study.
