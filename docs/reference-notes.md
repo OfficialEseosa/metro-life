@@ -22,3 +22,5 @@ Metro Life choices: one clear play entry, a compact world picker, one-page city/
 Metro Life choices: free map viewing has a persistent "visiting this map" notice when the sim is elsewhere. Flights are canonical airport actions with a visible $180 price and short busy state. The authoritative response changes the sim city and the map, preserving home/job/world. New York water divides Manhattan/Brooklyn; Bay water separates the peninsula and East Bay. Every new model has a sheet before geometry; no original place names, dialogue or ad artwork are reused.
 
 M5–M7 studies will be added at each milestone start.
+
+## Owner HUD redesign — source study before implementation
