@@ -7,4 +7,8 @@ Observed in `31rkf5nfrt4lz.js` and `2wn1at3jbyiyr.js`: activities are data recor
 
 Metro Life choices: keep four needs and seven skills, expand canonical labels into explicit server-side actions, make busy time short and visible, cap offline decay, and persist user/world state. The backend owns validation rather than trusting browser effects. Guest upgrades keep the same user and world. Do not reuse source dialogue, user names, ads, emoji or place content.
 
-M2–M7 studies will be added at each milestone start.
+## M2 — camera, lighting and map
+
+
+
+M3–M7 studies will be added at each milestone start.
