@@ -48,6 +48,8 @@ Spring's official WebSocket API guide (https://docs.spring.io/spring-framework/r
 
 
 
+
+
 ### Movement and camera follow
 
 **Two distinct scales of play.** The world map selects places and starts timed trips with a transport choice. It is not a freely walking street-level avatar in the captured implementation. `sN` creates travel state containing origin, destination, mode, total and elapsed time; `sP` changes location on arrival. `rp` interpolates a vehicle between the two lots using elapsed/total. The world camera is attached to MapControls, with panning/zoom and rotation disabled, rather than following a player position. Selecting a place is separate from travelling there.
