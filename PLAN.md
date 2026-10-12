@@ -386,3 +386,9 @@
 - Final health check PASS: compiled /api/version returns metro-life-m8; only own main8080/PID67140 and Vite5173/PID50804 listen, isolated8081/5174 stopped. Initial staged diff check FAILED because the newly generated evidence index used Windows CRLF; normalized only that JSON to LF and restaged. No source/test result changes. Explicit staging excludes human audits, saves and compiled output.
 
 - Final staged `git -c core.autocrlf=false diff --cached --check` PASS after LF repair; forbidden-path check found0audits/save/dist files staged. Local checkpoint committed as Review F: complete final regressions and scene transition fixes. Post-commit status has only the owner-provided untracked audits; tracked implementation/evidence clean. This final handoff entry is included by amending that local checkpoint; no push/deploy.
+
+
+- Missing lazy venue module identified through captured bootstrap (17_hd904qpi5y.js); public unauthenticated GET FAILED HTTP403. No authentication or bypass attempted. Exact response recorded. Keyboard movement and venue-camera implementation remain unverified unless further bounded evidence resolves them.
+
+
+## Owner direction: make Metro Life playable (P1–P6)
