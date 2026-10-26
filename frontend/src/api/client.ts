@@ -467,9 +467,16 @@ export function connectSocket(
   let lastFrameAt = Date.now();
   const queue: string[] = [];
   /** The server sends at least a clock frame every 5 s; silence means a dead link. */
+  let lastCheck = Date.now();
   const watchdog = setInterval(() => {
+    const now = Date.now(),
+      starved = now - lastCheck > 6000;
+    lastCheck = now;
+    // A page whose main thread was blocked (this check ran late) has frames waiting to be read;
+    // give them a chance before calling the link dead, or a busy page reconnects in a loop.
+    if (starved) lastFrameAt = Math.max(lastFrameAt, now - STALE_SOCKET_MS / 2);
     if (closed || document.hidden || ws?.readyState !== WebSocket.OPEN) return;
-    if (Date.now() - lastFrameAt <= STALE_SOCKET_MS) return;
+    if (now - lastFrameAt <= STALE_SOCKET_MS) return;
     // Treat it as closed now: a close handshake on a dead link can take minutes.
     const dead = ws;
     dead.onclose?.(new CloseEvent("close"));
@@ -498,10 +505,22 @@ export function connectSocket(
     socket.onmessage = (m) => {
       if (ws !== socket) return;
       lastFrameAt = Date.now();
+      let event: ServerEvent;
       try {
-        onEvent(JSON.parse(m.data as string) as ServerEvent);
+        event = JSON.parse(m.data as string) as ServerEvent;
       } catch {
-        // ignore malformed frames
+        return; // ignore malformed frames
+      }
+      try {
+        onEvent(event);
+      } catch {
+        // A handler error must not take the socket down.
+      } finally {
+        // Positions flow control: the server keeps at most two unacknowledged positions frames in
+        // flight, so a page that renders slowly is sent fewer of them instead of a growing backlog
+        // in front of its chat, events and social moments.
+        if (event.type === "positions" && socket.readyState === WebSocket.OPEN)
+          socket.send('{"type":"ack"}');
       }
     };
     socket.onclose = () => {

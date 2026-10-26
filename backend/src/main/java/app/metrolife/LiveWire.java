@@ -53,7 +53,16 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
     final AtomicReference<String> latestPresence = new AtomicReference<>(),
       latestClock = new AtomicReference<>(),
       latestPositions = new AtomicReference<>();
-    long clockSentAt;
+    long clockSentAt, presenceSentAt;
+    /**
+     * Positions flow control. A page acknowledges each positions frame it has applied; once it does,
+     * at most POSITIONS_IN_FLIGHT unacknowledged frames are outstanding, so a page that renders
+     * slowly gets fewer position updates instead of an ever longer backlog in front of its chat,
+     * events and social moments. Pages that never acknowledge are not throttled.
+     */
+    volatile boolean acks;
+    final java.util.concurrent.atomic.AtomicInteger positionsInFlight = new java.util.concurrent.atomic.AtomicInteger();
+    volatile long lastAckAt;
 
     Client(WebSocketSession ws, String token, String wid) {
       this.ws = new ConcurrentWebSocketSessionDecorator(ws, 2000, 65536);
@@ -68,6 +77,51 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
    * reconnect reloads everything over HTTP and replays the social inbox (see replaySocial).
    */
   static final int MAX_QUEUED = 2048;
+  static final int POSITIONS_IN_FLIGHT = 2;
+  /** Without any acknowledgement for this long the window reopens, so a lost ack never stalls positions. */
+  static final long ACK_STALL_MS = 10_000;
+
+  /** A full roster is resent at least this often even when nobody joined, left or changed. */
+  static final long PRESENCE_REFRESH_MS = 30_000;
+  /** Fields that positions frames already carry several times a second; they never trigger a roster. */
+  static final Set<String> LIVE_FIELDS = Set.of(
+    "position",
+    "needs",
+    "lifeAction",
+    "busyLabel",
+    "activity",
+    "activitySlot",
+    "socialBusy",
+    "travelStatus",
+    "tripId",
+    "loc"
+  );
+
+  /** What makes a new roster worth sending: who is here and how they look, not where they stand. */
+  static String rosterKey(JsonNode players) {
+    StringBuilder key = new StringBuilder();
+    for (JsonNode p : players) {
+      var fields = p.fields();
+      while (fields.hasNext()) {
+        var field = fields.next();
+        if (!LIVE_FIELDS.contains(field.getKey())) key.append(field.getKey()).append('=').append(field.getValue()).append(';');
+      }
+      key.append('\n');
+    }
+    return key.toString();
+  }
+
+  /** Live coordinates to the centimetre: smaller frames, and no change when nobody moved. */
+  static JsonNode compactPosition(JsonNode position) {
+    if (!(position instanceof ObjectNode p)) return position;
+    ObjectNode out = p.deepCopy();
+    for (String axis : List.of("x", "z", "face")) if (p.has(axis)) out.put(
+      axis,
+      Math.round(p.path(axis).asDouble() * 100) / 100.0
+    );
+    return out;
+  }
+
   /** Received social moments younger than this are replayed to every newly opened socket. */
   static final long SOCIAL_REPLAY_MS = 10 * 60_000;
   /** Heartbeat: a clock frame at least this often, so clients can detect a dead link. */
@@ -178,7 +232,11 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
     }
     try {
       JsonNode frame = g.mapper.readTree(message.getPayload());
-      if (frame.path("type").asText().equals("view")) {
+      if (frame.path("type").asText().equals("ack")) {
+        c.acks = true;
+        c.lastAckAt = System.currentTimeMillis();
+        c.positionsInFlight.updateAndGet(n -> Math.max(0, n - 1));
+      } else if (frame.path("type").asText().equals("view")) {
         String city = frame.path("city").asText();
         synchronized (g) {
           g.content.city(city);
@@ -245,7 +303,19 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
     String text = c.outgoing.poll();
     if (text == null) text = c.latestPresence.getAndSet(null);
     if (text == null) text = c.latestClock.getAndSet(null);
-    return text != null ? text : c.latestPositions.getAndSet(null);
+    if (text != null) return text;
+    text = c.latestPositions.getAndSet(null);
+    if (text != null) c.positionsInFlight.incrementAndGet();
+    return text;
+  }
+
+  /** False while a slow page still has unacknowledged positions frames (see Client.acks). */
+  boolean positionsWindowOpen(Client c) {
+    if (!c.acks || c.positionsInFlight.get() < POSITIONS_IN_FLIGHT) return true;
+    if (System.currentTimeMillis() - c.lastAckAt < ACK_STALL_MS) return false;
+    c.positionsInFlight.set(0);
+    c.lastAckAt = System.currentTimeMillis();
+    return true;
   }
 
   boolean pending(Client c) {
@@ -289,7 +359,7 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
         g.community.preparePresence(wid);
       for (Client c : clients.values()) {
         ObjectNode ses = g.session(c.token, false);
-        if (ses == null || !g.world(ses).path("id").asText().equals(c.wid)) continue;
+        if (ses == null || !g.world(ses).path("id").asText().equals(c.wid) || !positionsWindowOpen(c)) continue;
         var points = g.mapper.createArrayNode();
         for (JsonNode table : List.of(g.table("sims"), g.community.residents().path(c.wid)))
           for (JsonNode row : table)
@@ -314,7 +384,7 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
               p.put("travelStatus", g.transit.status(row));
               if (g.transit.active(row)) p.put("tripId", row.path("trip").path("id").asText());
               else p.putNull("tripId");
-              p.set("position", row.path("position").deepCopy());
+              p.set("position", compactPosition(row.path("position")));
               p.set(
                 "activitySlot",
                 row.path("activitySlot").isMissingNode() ? g.mapper.nullNode() : row.path("activitySlot").deepCopy()
@@ -353,9 +423,10 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
         ObjectNode ses = g.session(c.token, false),
           w = g.world(ses);
         ObjectNode p = g.community.players(w, c.city);
-        String presence = p.path("players").toString();
-        if (!presence.equals(c.presence)) {
+        String presence = rosterKey(p.path("players"));
+        if (!presence.equals(c.presence) || g.now() - c.presenceSentAt >= PRESENCE_REFRESH_MS) {
           c.presence = presence;
+          c.presenceSentAt = g.now();
           ObjectNode f = g.object().put("type", "presence").put("city", c.city);
           f.set("players", p.path("players"));
           frames.add(Map.entry(c, f.toString()));

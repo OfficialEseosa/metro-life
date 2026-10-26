@@ -261,7 +261,9 @@ final class Community {
       "lifeAction",
       s.path("lifeAction").path("until").asLong() > g.now() ? s.path("lifeAction").deepCopy() : g.mapper.nullNode()
     );
-    out.set("needs", s.path("needs").deepCopy());
+    // Whole numbers are all a passer-by can read, and they keep live frames small and steady.
+    ObjectNode needs = out.putObject("needs");
+    s.path("needs").fields().forEachRemaining(e -> needs.put(e.getKey(), Math.round(e.getValue().asDouble())));
     out.set("busyLabel", s.path("busyLabel").isMissingNode() ? g.mapper.nullNode() : s.path("busyLabel").deepCopy());
   }
 
