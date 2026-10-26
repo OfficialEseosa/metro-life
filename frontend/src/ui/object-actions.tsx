@@ -58,10 +58,7 @@ export function ObjectActions() {
     phase = useInteractions((s) => s.phase);
   const playing = useStore(
       (s) =>
-        !!s.sim &&
-        s.sim.introDone !== false &&
-        !s.sim.pendingBeat &&
-        !s.panel,
+        !!s.sim && s.sim.introDone !== false && !s.sim.pendingBeat && !s.panel,
     ),
     busyUntil = useStore((s) => s.sim?.busyUntil),
     busyLabel = useStore((s) => s.sim?.busyLabel),

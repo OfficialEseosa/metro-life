@@ -11,9 +11,11 @@ const requested = new Set<string>();
 function request(key: string, look: Look) {
   if (requested.has(key)) return;
   requested.add(key);
-  void characterStudio.portrait(key, look).then((url) =>
-    usePortraits.setState((s) => ({ images: { ...s.images, [key]: url } })),
-  );
+  void characterStudio
+    .portrait(key, look)
+    .then((url) =>
+      usePortraits.setState((s) => ({ images: { ...s.images, [key]: url } })),
+    );
 }
 
 /**

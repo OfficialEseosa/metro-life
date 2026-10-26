@@ -140,15 +140,19 @@ export function ConnectionGate() {
     return (
       <Card
         icon={<CloudSlash size={34} weight="duotone" />}
-        title={loadLimited ? "The city is full of new arrivals" : "The city is taking a breather"}
+        title={
+          loadLimited
+            ? "The city is full of new arrivals"
+            : "The city is taking a breather"
+        }
       >
         {loadLimited ? (
           <p>{loadError}</p>
         ) : (
           <p>
             We cannot reach the Metro Life server right now
-            {retryAt ? ", and we will keep trying to reconnect" : ""}. Nothing is
-            lost while you wait.
+            {retryAt ? ", and we will keep trying to reconnect" : ""}. Nothing
+            is lost while you wait.
           </p>
         )}
         {retryAt ? (
@@ -207,15 +211,16 @@ export function ReconnectBanner() {
   if (connection !== "reconnecting" || !since || now - since < 5000)
     return null;
   return (
-    <div className="hud-toast reconnect-banner" role="status" aria-live="polite">
+    <div
+      className="hud-toast reconnect-banner"
+      role="status"
+      aria-live="polite"
+    >
       <WifiSlash size={22} weight="bold" aria-hidden="true" />
       <span>
         <strong>Connection lost.</strong> Reconnecting… Your life is saved.
       </span>
-      <button
-        className="secondary"
-        onClick={retryNow}
-      >
+      <button className="secondary" onClick={retryNow}>
         <ArrowClockwise size={18} weight="bold" aria-hidden="true" />
         Retry now
       </button>

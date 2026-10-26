@@ -1063,7 +1063,8 @@
   }
   /* During a shift the rhythm card says what is happening; the cue column, the event
      chip and the dock step aside so toasts can rise above the card without covering anything. */
-  .metro-hud:has(.shift-timing) :is(.hud-left, .world-event-banner, .bottom-dock) {
+  .metro-hud:has(.shift-timing)
+    :is(.hud-left, .world-event-banner, .bottom-dock) {
     visibility: hidden;
     pointer-events: none;
   }

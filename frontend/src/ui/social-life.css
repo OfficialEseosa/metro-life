@@ -86,7 +86,9 @@
 }
 /* The feedback toast stack flows under the banner on wide screens. */
 .metro-hud:has(.world-event-banner) {
-  --feedback-top: calc(max(var(--hud-gap, 16px), env(safe-area-inset-top)) + 100px);
+  --feedback-top: calc(
+    max(var(--hud-gap, 16px), env(safe-area-inset-top)) + 100px
+  );
 }
 
 /* ---------- emote wheel ---------- */

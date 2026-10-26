@@ -411,7 +411,10 @@ export function PlotPrimary() {
           : !sim
             ? "Start your life first"
             : sim.firstDay && !sim.firstDay.complete
-              ? firstDayLeft(sim, "Finish your first-day goals before booking a plot")
+              ? firstDayLeft(
+                  sim,
+                  "Finish your first-day goals before booking a plot",
+                )
               : sim.city !== city
                 ? "Travel here before booking"
                 : sim.busyUntil

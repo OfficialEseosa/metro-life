@@ -93,7 +93,16 @@ export function readyLook(): Look {
   return {
     body: pick(["f", "m"]),
     skin: pick(SKIN_TONES),
-    hair: pick(["curly", "bob", "short", "bun", "afro", "braids", "long", "ponytail"]),
+    hair: pick([
+      "curly",
+      "bob",
+      "short",
+      "bun",
+      "afro",
+      "braids",
+      "long",
+      "ponytail",
+    ]),
     hairColor: pick(HAIR_COLOURS.slice(0, 9)),
     face: pick(["soft", "bright", "angular", "freckled"]),
     top,

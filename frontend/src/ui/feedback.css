@@ -298,7 +298,9 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .feedback-toast:not(:is([data-kind="error"], [data-kind="chat"], [data-kind="socialReceived"]))
+  .feedback-toast:not(
+      :is([data-kind="error"], [data-kind="chat"], [data-kind="socialReceived"])
+    )
     .feedback-detail {
     display: none;
   }

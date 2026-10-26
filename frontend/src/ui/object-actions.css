@@ -96,7 +96,9 @@
   border: 2px solid var(--c-primary-line);
   background: var(--c-surface);
   color: var(--c-ink);
-  box-shadow: 0 3px 0 var(--c-primary-line), var(--shadow-plate);
+  box-shadow:
+    0 3px 0 var(--c-primary-line),
+    var(--shadow-plate);
   font-size: var(--t-body);
   font-weight: 800;
   line-height: 1.2;

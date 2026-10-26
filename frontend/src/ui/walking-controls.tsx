@@ -14,8 +14,18 @@ import {
   interact,
   type InteractionIntent,
 } from "../walking";
-import { nearbyBench, nearbyDoor, interiorType, roomLayout, roomType } from "../navigation";
-import { clearQueuedInteractions, enqueueAction, useInteractions } from "../interactions";
+import {
+  nearbyBench,
+  nearbyDoor,
+  interiorType,
+  roomLayout,
+  roomType,
+} from "../navigation";
+import {
+  clearQueuedInteractions,
+  enqueueAction,
+  useInteractions,
+} from "../interactions";
 import { policyHours, actionReason, workCareNote } from "./action-rules";
 import { serverNow } from "../server-time";
 
@@ -104,7 +114,10 @@ export function Joystick() {
   useEffect(
     () =>
       useStore.subscribe((s, previous) => {
-        if ((s.panel && !previous.panel) || (s.searchOpen && !previous.searchOpen)) {
+        if (
+          (s.panel && !previous.panel) ||
+          (s.searchOpen && !previous.searchOpen)
+        ) {
           motion.x = motion.z = 0;
           setStick(null);
         }
@@ -179,7 +192,10 @@ function BusyFill() {
   }, [until]);
   if (!until) return null;
   const start = started ?? until - 3000,
-    share = Math.max(0, Math.min(1, (now - start) / Math.max(1, until - start)));
+    share = Math.max(
+      0,
+      Math.min(1, (now - start) / Math.max(1, until - start)),
+    );
   return (
     <span
       className="busy-fill"
@@ -330,7 +346,9 @@ export function ActionButton() {
         !s.panel &&
         !s.searchOpen &&
         p?.room &&
-        !useInteractions.getState().waiting.some((task) => task.kind === "door" && !task.enter)
+        !useInteractions
+          .getState()
+          .waiting.some((task) => task.kind === "door" && !task.enter)
       ) {
         enqueueAction({
           kind: "door",
@@ -553,13 +571,7 @@ export function ActionButton() {
             More activities here
           </button>
         )}
-      {!busy &&
-      !acting &&
-      !door &&
-      !station &&
-      !person &&
-      !bench &&
-      !seated ? (
+      {!busy && !acting && !door && !station && !person && !bench && !seated ? (
         <button className="walk-interact primary is-idle" disabled>
           <span className="walk-target">
             {room
