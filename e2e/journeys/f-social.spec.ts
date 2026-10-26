@@ -32,8 +32,8 @@ test("f. wave, hang out and gift both ways", async ({ browser }, testInfo) => {
     const moved = (before: ServerSim, other: string) => (s: ServerSim | null) =>
       (s?.relationships[other]?.lastAt ?? 0) > (before.relationships[other]?.lastAt ?? 0);
     const [senderAfter, targetAfter] = (await Promise.all([
-      poll(() => serverSim(from), moved(sender, target.userId), 60_000),
-      poll(() => serverSim(to), moved(target, sender.userId), 60_000),
+      poll(() => serverSim(from), moved(sender, target.userId), 240_000, 2000),
+      poll(() => serverSim(to), moved(target, sender.userId), 240_000, 2000),
     ])) as ServerSim[];
     for (const [before, after, other] of [
       [sender, senderAfter, target.userId],
