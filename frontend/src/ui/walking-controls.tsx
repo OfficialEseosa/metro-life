@@ -223,7 +223,8 @@ export function ActionButton() {
     target = useStore(readSocialTarget),
     clock = useStore((s) => s.clock),
     policy = useStore((s) => s.mayor?.mayor?.policy),
-    panel = useStore((s) => s.panel);
+    panel = useStore((s) => s.panel),
+    [sending, setSending] = useState("");
   const room = position?.room,
     context = sim && position ? stationAction(sim, world, position) : undefined,
     station = context?.station,
@@ -518,6 +519,11 @@ export function ActionButton() {
         <span className="walk-target">Back to your city</span>
       </button>
     );
+  /** Only the pressed button shows the spinner; its neighbours go quiet and keep their size. */
+  const send = (kind: "wave" | "hangout" | "gift", id: string) => {
+    setSending(kind);
+    void meet(kind, id).finally(() => setSending(""));
+  };
   const busy = !!sim.busyUntil,
     giftReason =
       (clock?.msPerMinute ?? 1000) >= 1000 &&
@@ -536,22 +542,28 @@ export function ActionButton() {
         >
           <span aria-hidden="true">With {firstName}</span>
           <ReasonButton
-            onClick={() => meet("wave", person.id)}
-            reason={acting ? "Sending…" : ""}
+            onClick={() => send("wave", person.id)}
+            reason=""
+            pending={sending === "wave"}
+            quiet={acting}
             aria-label={`Wave to ${person.name}`}
           >
             Wave
           </ReasonButton>
           <ReasonButton
-            onClick={() => meet("hangout", person.id)}
-            reason={acting ? "Sending…" : ""}
+            onClick={() => send("hangout", person.id)}
+            reason=""
+            pending={sending === "hangout"}
+            quiet={acting}
             aria-label={`Hang out with ${person.name}`}
           >
             Hang out
           </ReasonButton>
           <ReasonButton
-            onClick={() => meet("gift", person.id)}
-            reason={acting ? "Sending your gift…" : giftReason}
+            onClick={() => send("gift", person.id)}
+            reason={acting ? "" : giftReason}
+            pending={sending === "gift"}
+            quiet={acting}
             aria-label={`Give ${person.name} a $25 gift`}
             title={giftReason || undefined}
           >
@@ -591,7 +603,9 @@ export function ActionButton() {
       ) : (
         <ReasonButton
           className="walk-interact primary"
-          reason={acting ? "Sending…" : reason && !canTalk ? reason : ""}
+          reason={!acting && reason && !canTalk ? reason : ""}
+          pending={acting && !sending}
+          quiet={acting}
           onClick={interact}
         >
           <span className="walk-target">{label}</span>

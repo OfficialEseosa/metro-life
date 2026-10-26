@@ -696,6 +696,39 @@
   color: var(--c-ink-soft);
   box-shadow: none;
 }
+/* In flight: the pressed control swaps its label for a spinner inside the same box;
+   its neighbours only go quiet, so the group never changes size. */
+.walk-social button[aria-busy="true"] {
+  position: relative;
+  color: transparent;
+  border-color: var(--need-social);
+  background: var(--need-social-tint);
+}
+.walk-social button[aria-busy="true"]::after,
+.walk-interact[aria-busy="true"]::after {
+  position: absolute;
+  margin: 0;
+  border-color: var(--c-ink-soft);
+  border-right-color: transparent;
+}
+.walk-social button[aria-busy="true"]::after {
+  inset: 0;
+  margin: auto;
+}
+.walk-interact[aria-busy="true"]::after {
+  top: 50%;
+  right: var(--s-3);
+  margin-top: -9px;
+  border-color: var(--c-on-primary);
+  border-right-color: transparent;
+}
+/* The pressed action keeps its colour while it is sent. */
+.walk-interact.primary[aria-busy="true"]:disabled {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  border-color: var(--c-primary-edge);
+  box-shadow: 0 4px 0 var(--c-primary-edge);
+}
 .walk-social button:has(.gate-reason) {
   flex-basis: 100%;
 }

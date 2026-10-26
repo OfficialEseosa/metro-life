@@ -247,21 +247,30 @@ export function ErrorMessage({ text }: { text: string }) {
     </p>
   ) : null;
 }
-/** Keep each gate visible on touch screens and associated with its own control. */
+/**
+ * Keep each gate visible on touch screens and associated with its own control.
+ * `pending` marks the one control whose request is in flight (a spinner, no extra text);
+ * `quiet` disables a control without any text, so a busy group keeps its idle shape.
+ */
 export function ReasonButton({
   reason,
+  pending = false,
+  quiet = false,
   children,
   className = "",
   ...props
 }: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "disabled"> & {
   reason: string;
+  pending?: boolean;
+  quiet?: boolean;
 }) {
   const id = useId();
   return (
     <button
       {...props}
       className={`${className}${reason ? " has-gate-reason" : ""}`}
-      disabled={!!reason}
+      disabled={!!reason || pending || quiet}
+      aria-busy={pending || undefined}
       aria-describedby={
         reason
           ? [props["aria-describedby"], id].filter(Boolean).join(" ")
