@@ -173,8 +173,9 @@ export function SkyEnvironment({ room }: { room: boolean }) {
       u.stars.value = 0;
       s.ground.color.copy(p.hemiGround).lerp(p.ground, 0.5);
       // A smooth sky gradient needs little resolution; 64 px keeps rebuilds cheap.
-      const next = s.generator.fromScene(s.envScene, 0.02, 0.1, 100, { size: 64 })
-          .texture,
+      const next = s.generator.fromScene(s.envScene, 0.02, 0.1, 100, {
+          size: 64,
+        }).texture,
         previous = s.texture;
       s.texture = next;
       s.revision = p.revision;
@@ -199,7 +200,13 @@ const center = new THREE.Vector3(),
  * Where the near shadow box is. Instanced scenery reads this to draw only nearby
  * instances into the shadow map; `version` bumps when the focus moves a few metres.
  */
-export const shadowFocus = { x: 0, z: 0, radius: 40, follow: false, version: 0 };
+export const shadowFocus = {
+  x: 0,
+  z: 0,
+  radius: 40,
+  follow: false,
+  version: 0,
+};
 const FOLLOW_EXTENT = 26,
   OVERVIEW_EXTENT = 112,
   FOLLOW_DISTANCE = 70;
@@ -259,7 +266,11 @@ export function WorldLights({
       h = hemi.current,
       s = sun.current,
       f = fill.current;
-    gl.toneMappingExposure = room ? (p.nightFactor > 0.5 ? 1.0 : 1.04) : p.exposure;
+    gl.toneMappingExposure = room
+      ? p.nightFactor > 0.5
+        ? 1.0
+        : 1.04
+      : p.exposure;
     if (h) {
       h.color.copy(p.hemiSky);
       h.groundColor.copy(p.hemiGround);
@@ -323,10 +334,15 @@ export function WorldLights({
     }
     if (follow) {
       // Centre the box a little ahead of the player, towards what the camera sees.
-      if (player && !player.room && motion.follow) center.set(player.x, 0, player.z);
+      if (player && !player.room && motion.follow)
+        center.set(player.x, 0, player.z);
       else if (target) center.copy(target).setY(0);
-      forward.copy(target ?? center).sub(camera.position).setY(0);
-      if (forward.lengthSq() > 1e-4) center.addScaledVector(forward.normalize(), 7);
+      forward
+        .copy(target ?? center)
+        .sub(camera.position)
+        .setY(0);
+      if (forward.lengthSq() > 1e-4)
+        center.addScaledVector(forward.normalize(), 7);
       // Snap the centre to the shadow texel grid in light space; without it shadows shimmer.
       lightRight.crossVectors(worldUp, shadowDirection).normalize();
       lightUp.crossVectors(shadowDirection, lightRight).normalize();

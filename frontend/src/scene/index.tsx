@@ -39,11 +39,7 @@ import { MetropolitanFabric } from "./metropolitan-fabric";
 import { Fabric } from "./fabric";
 import { AtlantaSkyline, BlenderLandmark, KitInstances } from "./kit-models";
 import { blenderHeroes } from "./hero-ids";
-import {
-  lightUniforms,
-  timeOfDay,
-  setTimeOverride,
-} from "../lighting";
+import { lightUniforms, timeOfDay, setTimeOverride } from "../lighting";
 import {
   SkyDome,
   SkyEnvironment,
@@ -1146,14 +1142,25 @@ function City({
         // Every rigged person: distance from the player and whether they cast a sun shadow.
         const player = scene.getObjectByName("controlled-player"),
           at = new THREE.Vector3(),
-          list: { name: string; distance: number; casts: boolean; culled: boolean }[] = [];
+          list: {
+            name: string;
+            distance: number;
+            casts: boolean;
+            culled: boolean;
+          }[] = [];
         scene.traverse((o) => {
           if (o.name !== "rigged-character") return;
           o.getWorldPosition(at);
-          const skin = o.getObjectByName("character-skin") as THREE.SkinnedMesh | undefined;
+          const skin = o.getObjectByName("character-skin") as
+            | THREE.SkinnedMesh
+            | undefined;
           list.push({
             name: o.parent?.name ?? "",
-            distance: player ? +at.distanceTo(player.getWorldPosition(new THREE.Vector3())).toFixed(1) : -1,
+            distance: player
+              ? +at
+                  .distanceTo(player.getWorldPosition(new THREE.Vector3()))
+                  .toFixed(1)
+              : -1,
             casts: !!skin?.castShadow,
             culled: !!skin?.frustumCulled,
           });
@@ -1194,7 +1201,14 @@ function City({
             if (p.name) path.unshift(p.name);
           return path.slice(0, 2).join("/") || o.type;
         };
-        gl.renderBufferDirect = (cam, sc, geometry, material, object, group) => {
+        gl.renderBufferDirect = (
+          cam,
+          sc,
+          geometry,
+          material,
+          object,
+          group,
+        ) => {
           const key = `${cam === camera ? "" : "shadow:"}${label(object)}`;
           counts[key] = (counts[key] ?? 0) + 1;
           direct.call(gl, cam, sc, geometry, material, object, group);

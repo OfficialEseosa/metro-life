@@ -506,7 +506,8 @@ export function ObjectPicking({
         pinHits.sort((a, b) => a.distance - b.distance);
         const pin = pinHits[0],
           locationIds = pins.geometry.userData.locationIds as
-            string[] | undefined;
+            | string[]
+            | undefined;
         const sameDoor =
           pin &&
           picked?.target.kind === "door" &&

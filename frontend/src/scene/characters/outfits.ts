@@ -73,7 +73,9 @@ export function headFor(sex: Sex, face: string | undefined): Donor {
         : "m_casual";
 }
 
-const RULES: Partial<Record<Donor, Record<string, Slot | "skin" | "skinDark">>> = {
+const RULES: Partial<
+  Record<Donor, Record<string, Slot | "skin" | "skinDark">>
+> = {
   f_casual: { White: "top", Grey: "shoe", Orange: "bottom" },
   f_party: { LimeGreen: "top", Gold: "accent", Red: "shoe" },
   f_smart: { White: "shirt" },
@@ -85,7 +87,12 @@ const RULES: Partial<Record<Donor, Record<string, Slot | "skin" | "skinDark">>> 
     Brown_02: "bottom",
     Brown2: "bottomDark",
   },
-  m_casual: { White: "sole", Red_Dark: "shoe", LightBrown: "top", LightBlue: "bottom" },
+  m_casual: {
+    White: "sole",
+    Red_Dark: "shoe",
+    LightBrown: "top",
+    LightBlue: "bottom",
+  },
   m_casual2: { White: "sole", Purple: "shoe", LightBlue: "bottom" },
   m_party: { Red_Dark: "bottom", White: "sole", LightBrown: "top" },
   m_smart: { Suit: "top", White: "shirt", Tie: "tie" },

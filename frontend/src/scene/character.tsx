@@ -112,8 +112,11 @@ export function RiggedCharacter({
     // Development only: the lab can hold the player in a pose to inspect it in a real room.
     const forced =
       import.meta.env.DEV && marker.current
-        ? (window as { __metroForcePose?: { pose: CharacterPose; hip?: number } })
-            .__metroForcePose
+        ? (
+            window as {
+              __metroForcePose?: { pose: CharacterPose; hip?: number };
+            }
+          ).__metroForcePose
         : undefined;
     const pose = forced?.pose ?? readPose(),
       condition = readCondition?.();

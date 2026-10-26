@@ -83,15 +83,59 @@ function crowdFigure() {
     g.deleteAttribute("uv");
     parts.push(g);
   };
-  add(new THREE.SphereGeometry(0.112, 12, 8), 0, 0, [0, 1.62, 0.005], [0.94, 1.1, 1]);
-  const hair = new THREE.SphereGeometry(0.122, 12, 4, 0, Math.PI * 2, 0, Math.PI * 0.64);
+  add(
+    new THREE.SphereGeometry(0.112, 12, 8),
+    0,
+    0,
+    [0, 1.62, 0.005],
+    [0.94, 1.1, 1],
+  );
+  const hair = new THREE.SphereGeometry(
+    0.122,
+    12,
+    4,
+    0,
+    Math.PI * 2,
+    0,
+    Math.PI * 0.64,
+  );
   hair.rotateX(-0.42);
   add(hair, 1, 0, [0, 1.64, -0.012], [0.96, 1.08, 1.04]);
-  add(new THREE.SphereGeometry(1, 6, 3), 1, 0, [0, 1.704, 0.085], [0.058, 0.018, 0.022]);
-  add(new THREE.SphereGeometry(1, 6, 3), 6, 0, [-0.04, 1.625, 0.106], [0.026, 0.022, 0.009]);
-  add(new THREE.SphereGeometry(1, 6, 3), 6, 0, [0.04, 1.625, 0.106], [0.026, 0.022, 0.009]);
-  add(new THREE.SphereGeometry(1, 6, 3), 5, 0, [-0.04, 1.625, 0.114], [0.014, 0.016, 0.012]);
-  add(new THREE.SphereGeometry(1, 6, 3), 5, 0, [0.04, 1.625, 0.114], [0.014, 0.016, 0.012]);
+  add(
+    new THREE.SphereGeometry(1, 6, 3),
+    1,
+    0,
+    [0, 1.704, 0.085],
+    [0.058, 0.018, 0.022],
+  );
+  add(
+    new THREE.SphereGeometry(1, 6, 3),
+    6,
+    0,
+    [-0.04, 1.625, 0.106],
+    [0.026, 0.022, 0.009],
+  );
+  add(
+    new THREE.SphereGeometry(1, 6, 3),
+    6,
+    0,
+    [0.04, 1.625, 0.106],
+    [0.026, 0.022, 0.009],
+  );
+  add(
+    new THREE.SphereGeometry(1, 6, 3),
+    5,
+    0,
+    [-0.04, 1.625, 0.114],
+    [0.014, 0.016, 0.012],
+  );
+  add(
+    new THREE.SphereGeometry(1, 6, 3),
+    5,
+    0,
+    [0.04, 1.625, 0.114],
+    [0.014, 0.016, 0.012],
+  );
   for (const side of [-1, 1])
     add(
       new THREE.BoxGeometry(0.05, 0.008, 0.012),
@@ -104,11 +148,22 @@ function crowdFigure() {
   const longHair = new THREE.CapsuleGeometry(0.031, 0.25, 1, 4);
   add(longHair.clone(), 1, 0, [-0.078, 1.51, -0.075], [1, 1, 0.85], 0, true);
   add(longHair, 1, 0, [0.078, 1.51, -0.075], [1, 1, 0.85], 0, true);
-  add(new THREE.CylinderGeometry(0.046, 0.052, 0.12, 8, 1, true), 0, 0, [0, 1.48, 0]);
+  add(
+    new THREE.CylinderGeometry(0.046, 0.052, 0.12, 8, 1, true),
+    0,
+    0,
+    [0, 1.48, 0],
+  );
   const collar = new THREE.TorusGeometry(0.061, 0.008, 3, 6);
   collar.rotateX(Math.PI / 2);
   add(collar, 7, 0, [0, 1.45, 0]);
-  add(new THREE.CapsuleGeometry(0.145, 0.26, 2, 8), 2, 0, [0, 1.21, 0], [1, 1, 0.68]);
+  add(
+    new THREE.CapsuleGeometry(0.145, 0.26, 2, 8),
+    2,
+    0,
+    [0, 1.21, 0],
+    [1, 1, 0.68],
+  );
   add(
     new THREE.CylinderGeometry(0.15, 0.15, 0.015, 6, 1, true),
     7,
@@ -116,13 +171,46 @@ function crowdFigure() {
     [0, 1.02, 0],
     [1, 1, 0.72],
   );
-  add(new THREE.CapsuleGeometry(0.135, 0.06, 1, 8), 3, 0, [0, 0.96, 0], [1, 1, 0.72]);
+  add(
+    new THREE.CapsuleGeometry(0.135, 0.06, 1, 8),
+    3,
+    0,
+    [0, 0.96, 0],
+    [1, 1, 0.72],
+  );
   for (const side of [-1, 1]) {
-    add(new THREE.CapsuleGeometry(0.064, 0.74, 1, 6), 3, 0, [side * 0.082, 0.5, 0]);
-    add(new THREE.SphereGeometry(1, 6, 3), 4, 0, [side * 0.085, 0.045, 0.035], [0.058, 0.048, 0.11]);
-    add(new THREE.CapsuleGeometry(0.047, 0.44, 1, 5), 2, 1, [side * 0.205, 1.17, 0], [1, 1, 1], side * 0.09);
-    add(new THREE.SphereGeometry(0.045, 5, 3), 0, 1, [side * 0.232, 0.88, 0.01], [1, 1.25, 1]);
-    add(new THREE.SphereGeometry(0.014, 4, 2), 5, 0, [side * 0.04, 1.625, 0.104]);
+    add(new THREE.CapsuleGeometry(0.064, 0.74, 1, 6), 3, 0, [
+      side * 0.082,
+      0.5,
+      0,
+    ]);
+    add(
+      new THREE.SphereGeometry(1, 6, 3),
+      4,
+      0,
+      [side * 0.085, 0.045, 0.035],
+      [0.058, 0.048, 0.11],
+    );
+    add(
+      new THREE.CapsuleGeometry(0.047, 0.44, 1, 5),
+      2,
+      1,
+      [side * 0.205, 1.17, 0],
+      [1, 1, 1],
+      side * 0.09,
+    );
+    add(
+      new THREE.SphereGeometry(0.045, 5, 3),
+      0,
+      1,
+      [side * 0.232, 0.88, 0.01],
+      [1, 1.25, 1],
+    );
+    add(new THREE.SphereGeometry(0.014, 4, 2), 5, 0, [
+      side * 0.04,
+      1.625,
+      0.104,
+    ]);
   }
   const geometry = mergeGeometries(parts)!;
   for (const g of parts) g.dispose();
@@ -365,7 +453,8 @@ export function Residents() {
                 : ["long", "bob", "ponytail", "braids"].includes(look.hair)
                   ? 1
                   : 0,
-            seatedSlot: !!p.activitySlot && SEATED_SLOTS.has(p.activitySlot.pose),
+            seatedSlot:
+              !!p.activitySlot && SEATED_SLOTS.has(p.activitySlot.pose),
             label: lifeLabel(p),
             topic: lifeTopic(p),
             condition: bodyCondition(p),
@@ -388,8 +477,7 @@ export function Residents() {
         i,
         p.crowdPose +
           16 * condition +
-          64 *
-            (nearSet.current.has(p.id) && ready.current.has(p.id) ? 1 : 0) +
+          64 * (nearSet.current.has(p.id) && ready.current.has(p.id) ? 1 : 0) +
           128 * p.hairKind,
       );
       model.phases.setX(
@@ -540,10 +628,11 @@ export function Residents() {
       const pose =
           speed > 0.08 ? (state.pose === "Run" ? 2 : 1) : person.crowdPose,
         condition =
-          (person.condition.tired ? 1 : 0) +
-          (person.condition.hungry ? 2 : 0),
+          (person.condition.tired ? 1 : 0) + (person.condition.hungry ? 2 : 0),
         near =
-          nearSet.current.has(person.id) && ready.current.has(person.id) ? 1 : 0;
+          nearSet.current.has(person.id) && ready.current.has(person.id)
+            ? 1
+            : 0;
       model.states.setX(
         i,
         pose + 16 * condition + 64 * near + 128 * person.hairKind,
@@ -572,7 +661,8 @@ export function Residents() {
           dwell = now - (promotedAt.current.get(p.id) ?? -Infinity);
         if (
           near &&
-          ((!state.hidden && state.distance <= DEMOTE_BEYOND) || dwell < MIN_DWELL)
+          ((!state.hidden && state.distance <= DEMOTE_BEYOND) ||
+            dwell < MIN_DWELL)
         )
           keep.push(p.id);
         else if (!near && !state.hidden && state.distance <= PROMOTE_WITHIN)
@@ -590,7 +680,11 @@ export function Residents() {
             dz = z - state.position.z,
             d = dx * dx + dz * dz;
           if (d < 0.09 || d >= best) return;
-          if (dx * Math.sin(state.yaw) + dz * Math.cos(state.yaw) < -0.3 * Math.sqrt(d)) return;
+          if (
+            dx * Math.sin(state.yaw) + dz * Math.cos(state.yaw) <
+            -0.3 * Math.sqrt(d)
+          )
+            return;
           best = d;
           state.looking = true;
           state.look.set(x, y + 1.55, z);
@@ -598,7 +692,8 @@ export function Residents() {
         if (player) consider(player.x, state.position.y, player.z);
         for (const other of nearSet.current) {
           const o = other === id ? undefined : states.current.get(other);
-          if (o && !o.hidden) consider(o.position.x, o.position.y, o.position.z);
+          if (o && !o.hidden)
+            consider(o.position.x, o.position.y, o.position.z);
         }
       }
       const selected = keep.slice(0, cap);
@@ -621,9 +716,7 @@ export function Residents() {
       dirty.current = false;
       lastCamera.current.copy(camera.matrixWorld);
       lastHeight.current = size.height;
-      mesh.instanceMatrix.needsUpdate =
-        model.states.needsUpdate =
-          true;
+      mesh.instanceMatrix.needsUpdate = model.states.needsUpdate = true;
       mesh.computeBoundingSphere();
     }
   });

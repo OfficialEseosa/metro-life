@@ -32,12 +32,15 @@ function proceduralPiece(f: Piece, palette: ReturnType<typeof roomPalette>) {
     b.cylinder(0, 1.3, -d / 2 + 0.14, 0.025, 2.1, "#a9b6b7", 8);
     b.box(0, 2.28, -d * 0.28, 0.05, 0.05, d * 0.42, "#a9b6b7");
     b.cylinder(0, 2.22, -d * 0.08, 0.16, 0.05, "#c9d3d4", 16);
-    for (const x of [-w / 2, w / 2]) b.box(x, 2.25, 0, 0.05, 0.05, d, palette.trim);
+    for (const x of [-w / 2, w / 2])
+      b.box(x, 2.25, 0, 0.05, 0.05, d, palette.trim);
   } else if (f.kind === "tub") {
     b.box(0, 0.28, 0, w, 0.52, d, "#f1f3ee");
     b.box(0, 0.53, 0, w * 0.84, 0.03, d * 0.7, "#8fc3c8");
-    for (const z of [-d * 0.46, d * 0.46]) b.box(0, 0.55, z, w, 0.06, 0.08, "#ffffff");
-    for (const x of [-w * 0.46, w * 0.46]) b.box(x, 0.55, 0, 0.08, 0.06, d, "#ffffff");
+    for (const z of [-d * 0.46, d * 0.46])
+      b.box(0, 0.55, z, w, 0.06, 0.08, "#ffffff");
+    for (const x of [-w * 0.46, w * 0.46])
+      b.box(x, 0.55, 0, 0.08, 0.06, d, "#ffffff");
     b.cylinder(w * 0.4, 0.75, -d * 0.32, 0.03, 0.45, "#a2b1b3", 8);
     b.box(w * 0.36, 0.95, -d * 0.32, 0.12, 0.03, 0.03, "#a2b1b3");
   } else if (f.kind === "sculpture") {
@@ -57,7 +60,9 @@ function proceduralPiece(f: Piece, palette: ReturnType<typeof roomPalette>) {
         0.78 + (i ? 0 : 0.18) + (i % 2) * 0.1,
         Math.cos(a) * r,
         w * 0.3,
-        f.kind === "flowers" && i > 2 ? ["#e48ea4", "#f4cf6c", "#ffffff"][i % 3] : colour,
+        f.kind === "flowers" && i > 2
+          ? ["#e48ea4", "#f4cf6c", "#ffffff"][i % 3]
+          : colour,
         1,
         0.85,
         1,
@@ -100,9 +105,16 @@ export function FurnishedHome() {
   );
   const furniture = layout.furniture as Piece[];
   if (import.meta.env.DEV)
-    (window as unknown as { __metroHome?: unknown }).__metroHome = furniture.map(
-      (f) => ({ id: f.id, kind: f.kind, x: f.x, z: f.z, w: f.w, d: f.d, angle: f.angle }),
-    );
+    (window as unknown as { __metroHome?: unknown }).__metroHome =
+      furniture.map((f) => ({
+        id: f.id,
+        kind: f.kind,
+        x: f.x,
+        z: f.z,
+        w: f.w,
+        d: f.d,
+        angle: f.angle,
+      }));
   const cooking = useCooking();
   const modelled = useMemo(
     () =>
@@ -119,11 +131,48 @@ export function FurnishedHome() {
   // Wall art and a sill plant: decoration that never takes floor space from Buy mode.
   const decor = useMemo<Prop[]>(
     () => [
-      { pack: "furniture", name: "pictureframe_large_B", x: 1.45, y: 1.75, z: -hd + 0.1, s: 0.62 },
-      { pack: "furniture", name: "pictureframe_small_A", x: hw - 0.1, y: 1.6, z: 0.2, ry: -Math.PI / 2, s: 0.8 },
-      { pack: "furniture", name: "pictureframe_medium", x: hw - 0.1, y: 1.75, z: -0.55, ry: -Math.PI / 2, s: 0.7 },
-      { pack: "furniture", name: "cactus_small_A", x: -1.15, y: 1.17, z: -hd + 0.2, s: 0.55 },
-      { pack: "furniture", name: "cactus_small_B", x: -0.25, y: 1.17, z: -hd + 0.2, s: 0.5 },
+      {
+        pack: "furniture",
+        name: "pictureframe_large_B",
+        x: 1.45,
+        y: 1.75,
+        z: -hd + 0.1,
+        s: 0.62,
+      },
+      {
+        pack: "furniture",
+        name: "pictureframe_small_A",
+        x: hw - 0.1,
+        y: 1.6,
+        z: 0.2,
+        ry: -Math.PI / 2,
+        s: 0.8,
+      },
+      {
+        pack: "furniture",
+        name: "pictureframe_medium",
+        x: hw - 0.1,
+        y: 1.75,
+        z: -0.55,
+        ry: -Math.PI / 2,
+        s: 0.7,
+      },
+      {
+        pack: "furniture",
+        name: "cactus_small_A",
+        x: -1.15,
+        y: 1.17,
+        z: -hd + 0.2,
+        s: 0.55,
+      },
+      {
+        pack: "furniture",
+        name: "cactus_small_B",
+        x: -0.25,
+        y: 1.17,
+        z: -hd + 0.2,
+        s: 0.5,
+      },
     ],
     [hw, hd],
   );
@@ -140,18 +189,29 @@ export function FurnishedHome() {
     <group name="furnished-home">
       <mesh position={[0, -0.13, 0]} receiveShadow>
         <boxGeometry args={[bounds.w, 0.25, bounds.d]} />
-        <meshStandardMaterial color={palette.floor} map={textures.floor} roughness={0.82} />
+        <meshStandardMaterial
+          color={palette.floor}
+          map={textures.floor}
+          roughness={0.82}
+        />
       </mesh>
       <RoomWalls hw={hw} hd={hd} palette={palette} paper={textures.paper} />
       <WallMounted side="back">
         <RoomWindow hd={hd} />
         <Suspense fallback={null}>
-          <PropBatch props={decor.slice(0, 1).concat(decor.slice(3))} name="home-wall-decor" />
+          <PropBatch
+            props={decor.slice(0, 1).concat(decor.slice(3))}
+            name="home-wall-decor"
+          />
         </Suspense>
       </WallMounted>
       <WallMounted side="right">
         <Suspense fallback={null}>
-          <PropBatch props={decor.slice(1, 3)} name="home-wall-art" castShadow={false} />
+          <PropBatch
+            props={decor.slice(1, 3)}
+            name="home-wall-art"
+            castShadow={false}
+          />
         </Suspense>
       </WallMounted>
       <Suspense fallback={null}>
@@ -203,7 +263,9 @@ export function RoomWindow({ hd }: { hd: number }) {
     if (!m) return;
     m.emissive.copy(timeOfDay.skyBottom).lerp(timeOfDay.skyTop, 0.35);
     m.emissiveIntensity = 0.9 - timeOfDay.nightFactor * 0.55;
-    m.color.copy(timeOfDay.skyTop).lerp(warmNight, timeOfDay.nightFactor * 0.25);
+    m.color
+      .copy(timeOfDay.skyTop)
+      .lerp(warmNight, timeOfDay.nightFactor * 0.25);
   });
   return (
     <group position={[-0.7, 1.85, -hd]}>
@@ -246,7 +308,12 @@ function DeskScreen({ piece }: { piece: Piece }) {
       </mesh>
       <mesh position={[0, 0.36, back + 0.027]}>
         <planeGeometry args={[Math.min(0.82, piece.w * 0.5), 0.38]} />
-        <meshStandardMaterial color="#1b2a30" emissive="#9fd8e6" emissiveIntensity={1.15} toneMapped />
+        <meshStandardMaterial
+          color="#1b2a30"
+          emissive="#9fd8e6"
+          emissiveIntensity={1.15}
+          toneMapped
+        />
       </mesh>
       <mesh position={[0, 0.012, back + 0.38]}>
         <boxGeometry args={[0.55, 0.02, 0.18]} />

@@ -429,7 +429,7 @@ function route(
     visited = new Set<number>();
   open.push({ x: 0, z: 0, key: first, g: 0, f: heuristic(0, 0) * 1.5 });
   let found: Node | undefined;
-  for (let expanded = 0; open.length && expanded < maxNodes;) {
+  for (let expanded = 0; open.length && expanded < maxNodes; ) {
     const node = open.pop();
     if (node.g !== cost.get(node.key) || visited.has(node.key)) continue;
     visited.add(node.key);

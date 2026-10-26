@@ -71,18 +71,49 @@ export function furnitureProps(piece: Piece): Prop[] {
   switch (kind) {
     case "bed":
       // The model's head is at -z; the home layout puts the head at +x.
-      put("furniture", "bed_double_A", 0, 0, 0, -Math.PI / 2, [d / 3.1, 0.62, w / 3], soften(piece.color));
+      put(
+        "furniture",
+        "bed_double_A",
+        0,
+        0,
+        0,
+        -Math.PI / 2,
+        [d / 3.1, 0.62, w / 3],
+        soften(piece.color),
+      );
       break;
     case "chair":
-      put("furniture", "armchair_pillows", 0, 0, 0, 0, [w / 1.8, 0.58, d / 1.6], soften(piece.color));
+      put(
+        "furniture",
+        "armchair_pillows",
+        0,
+        0,
+        0,
+        0,
+        [w / 1.8, 0.58, d / 1.6],
+        soften(piece.color),
+      );
       break;
     case "sofa":
     case "bench":
-      put("furniture", "couch_pillows", 0, 0, 0, 0, [w / 3, 0.58, d / 1.6], soften(piece.color));
+      put(
+        "furniture",
+        "couch_pillows",
+        0,
+        0,
+        0,
+        0,
+        [w / 3, 0.58, d / 1.6],
+        soften(piece.color),
+      );
       break;
     case "table":
       if (w < 0.8)
-        put("furniture", "cabinet_small_decorated", 0, 0, 0, 0, [w / 1.05, 0.42, d / 1.1]);
+        put("furniture", "cabinet_small_decorated", 0, 0, 0, 0, [
+          w / 1.05,
+          0.42,
+          d / 1.1,
+        ]);
       else {
         put("furniture", "table_medium", 0, 0, 0, 0, [w / 2, 0.76, d / 2]);
         put("restaurant", "plate", 0, 0.76, 0, 0, 0.5);
@@ -104,13 +135,29 @@ export function furnitureProps(piece: Piece): Prop[] {
         0,
         [w / 2, 0.78, d / 2.29],
       );
-      put("restaurant", "pot_A_stew", -w * 0.2, 0.78 * 1.0, -d * 0.18, 0.4, 0.42);
+      put(
+        "restaurant",
+        "pot_A_stew",
+        -w * 0.2,
+        0.78 * 1.0,
+        -d * 0.18,
+        0.4,
+        0.42,
+      );
       break;
     case "fridge":
-      put("restaurant", "fridge_A_decorated", 0, 0, 0, 0, [w / 2, 0.76, d / 2.24]);
+      put("restaurant", "fridge_A_decorated", 0, 0, 0, 0, [
+        w / 2,
+        0.76,
+        d / 2.24,
+      ]);
       break;
     case "sink":
-      put("restaurant", "kitchencounter_sink_backsplash", 0, 0, 0, 0, [w / 2, 0.86, d / 2.04]);
+      put("restaurant", "kitchencounter_sink_backsplash", 0, 0, 0, 0, [
+        w / 2,
+        0.86,
+        d / 2.04,
+      ]);
       break;
     case "lamp":
       put("furniture", "lamp_standing", 0, 0, 0, 0, [w * 1.15, 0.66, d * 1.15]);
@@ -128,7 +175,11 @@ export function furnitureProps(piece: Piece): Prop[] {
       );
       break;
     case "shelf":
-      put("furniture", "cabinet_medium_decorated", 0, 0, 0, 0, [w / 2.04, 0.92, d / 1.0]);
+      put("furniture", "cabinet_medium_decorated", 0, 0, 0, 0, [
+        w / 2.04,
+        0.92,
+        d / 1.0,
+      ]);
       break;
   }
   return out;

@@ -5,7 +5,10 @@ import { lightUniforms } from "../lighting";
 export function skylineWindows(
   geometry: THREE.BufferGeometry,
   material: THREE.MeshStandardMaterial,
-  { cell = [3.4, 3.6], minY = 12 }: { cell?: [number, number]; minY?: number } = {},
+  {
+    cell = [3.4, 3.6],
+    minY = 12,
+  }: { cell?: [number, number]; minY?: number } = {},
 ) {
   const position = geometry.getAttribute("position"),
     normal = geometry.getAttribute("normal"),

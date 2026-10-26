@@ -58,12 +58,15 @@ function withRim(
   material.onBeforeCompile = (shader) => {
     shader.uniforms.rimStrength = characterRim.strength;
     shader.uniforms.rimColour = characterRim.colour;
-    const clothAttribute = kind === "cloth" ? "attribute vec2 clothBand;\n" : "",
+    const clothAttribute =
+        kind === "cloth" ? "attribute vec2 clothBand;\n" : "",
       clothVarying = kind === "cloth" ? "varying vec2 vClothBand;\n" : "";
     shader.vertexShader = shader.vertexShader
       .replace(
         "#include <common>",
-        "#include <common>\nvarying vec3 vRest;\n" + clothAttribute + clothVarying,
+        "#include <common>\nvarying vec3 vRest;\n" +
+          clothAttribute +
+          clothVarying,
       )
       .replace(
         "#include <begin_vertex>",
@@ -79,8 +82,12 @@ function withRim(
           (kind === "skin" ? bump.split("void")[0] : bump),
       )
       .replace(
-        kind === "skin" ? "#include <lights_fragment_end>" : "#include <normal_fragment_maps>",
-        (kind === "skin" ? "#include <lights_fragment_end>" : "#include <normal_fragment_maps>") +
+        kind === "skin"
+          ? "#include <lights_fragment_end>"
+          : "#include <normal_fragment_maps>",
+        (kind === "skin"
+          ? "#include <lights_fragment_end>"
+          : "#include <normal_fragment_maps>") +
           "\n" +
           detail,
       )

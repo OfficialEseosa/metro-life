@@ -90,15 +90,51 @@ function park(b: Builder, w = 20, d = 15) {
 /** A parked airliner: white fuselage, swept wings and a coloured tail. */
 function plane(b: Builder, x: number, z: number, ry: number, tail: string) {
   const p = new Builder();
-  p.add(new THREE.CylinderGeometry(0.42, 0.42, 6.4, 10), "#f4f2ec", 0, 0.95, 0, Math.PI / 2);
-  p.add(new THREE.SphereGeometry(0.42, 10, 6), "#f4f2ec", 0, 0.95, 3.2, 0, 0, 0);
-  p.add(new THREE.ConeGeometry(0.42, 1.2, 10), "#f4f2ec", 0, 0.95, -3.8, -Math.PI / 2);
+  p.add(
+    new THREE.CylinderGeometry(0.42, 0.42, 6.4, 10),
+    "#f4f2ec",
+    0,
+    0.95,
+    0,
+    Math.PI / 2,
+  );
+  p.add(
+    new THREE.SphereGeometry(0.42, 10, 6),
+    "#f4f2ec",
+    0,
+    0.95,
+    3.2,
+    0,
+    0,
+    0,
+  );
+  p.add(
+    new THREE.ConeGeometry(0.42, 1.2, 10),
+    "#f4f2ec",
+    0,
+    0.95,
+    -3.8,
+    -Math.PI / 2,
+  );
   p.box(0, 0.85, 0.3, 6.6, 0.1, 1.3, "#e6e3da");
   p.box(0, 1.0, -3.6, 2.6, 0.08, 0.8, "#e6e3da");
   p.box(0, 1.75, -3.7, 0.1, 1.5, 1.0, tail);
   p.box(0, 1.03, 2.1, 0.86, 0.12, 0.5, "#3c5664");
-  for (const ex of [-1.8, 1.8]) p.add(new THREE.CylinderGeometry(0.22, 0.22, 0.8, 8), "#c9ccc8", ex, 0.6, 0.6, Math.PI / 2);
-  for (const [gx, gz] of [[0, 2.4], [-1, 0], [1, 0]]) p.cylinder(gx, 0.25, gz, 0.07, 0.5, "#55606a", 6);
+  for (const ex of [-1.8, 1.8])
+    p.add(
+      new THREE.CylinderGeometry(0.22, 0.22, 0.8, 8),
+      "#c9ccc8",
+      ex,
+      0.6,
+      0.6,
+      Math.PI / 2,
+    );
+  for (const [gx, gz] of [
+    [0, 2.4],
+    [-1, 0],
+    [1, 0],
+  ])
+    p.cylinder(gx, 0.25, gz, 0.07, 0.5, "#55606a", 6);
   const g = p.build();
   g.rotateY(ry);
   return b.add(g, "#ffffff", x, 0, z) && restoreColours(b, g);
@@ -143,15 +179,7 @@ export function terminalFront(
         0.07,
         darkGlass,
       );
-  b.box(
-    0,
-    3.15,
-    canopyCenter,
-    width + 1.2,
-    0.18,
-    3,
-    "#d9e3e1",
-  ).box(
+  b.box(0, 3.15, canopyCenter, width + 1.2, 0.18, 3, "#d9e3e1").box(
     0,
     3.2,
     canopyFront - 0.06,
@@ -197,7 +225,16 @@ function airport(b: Builder, curved = false, piers = true) {
   if (curved) {
     // Two vaulted shells, the classic winged terminal roof.
     for (const x of [-4.2, 4.2]) {
-      const vault = new THREE.CylinderGeometry(3.4, 3.4, 7.6, 18, 1, true, -Math.PI / 2, Math.PI);
+      const vault = new THREE.CylinderGeometry(
+        3.4,
+        3.4,
+        7.6,
+        18,
+        1,
+        true,
+        -Math.PI / 2,
+        Math.PI,
+      );
       vault.scale(1, 0.42, 1);
       b.add(vault, "#f6f2e8", x, 3.2, 1, Math.PI / 2, 0, Math.PI / 2);
     }
@@ -209,7 +246,8 @@ function airport(b: Builder, curved = false, piers = true) {
   // Piers with glazed sides and jet bridges.
   for (const x of piers ? [-10, 0, 10] : []) {
     b.box(x, 0.9, -8, 2.6, 1.8, 11, hall);
-    for (const side of [-1, 1]) b.box(x + side * 1.31, 1.05, -8, 0.06, 0.8, 10.4, pane);
+    for (const side of [-1, 1])
+      b.box(x + side * 1.31, 1.05, -8, 0.06, 0.8, 10.4, pane);
     b.box(x, 1.9, -8, 2.9, 0.16, 11.3, trim);
     for (const z of [-6, -11]) {
       for (const side of [-1, 1]) {

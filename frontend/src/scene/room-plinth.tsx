@@ -58,7 +58,10 @@ export function RoomPlinth({ room }: { room: string }) {
   const radius = Math.max(w, d) * 2.4 + 18;
   const ground = useMemo(() => {
     const material = home
-      ? grassify(new THREE.MeshStandardMaterial({ roughness: 1, transparent: true }), "room-lawn")
+      ? grassify(
+          new THREE.MeshStandardMaterial({ roughness: 1, transparent: true }),
+          "room-lawn",
+        )
       : new THREE.MeshStandardMaterial({ roughness: 0.95, transparent: true });
     const compile = material.onBeforeCompile;
     const fade = { value: radius };
@@ -85,15 +88,25 @@ export function RoomPlinth({ room }: { room: string }) {
           ${home ? "" : "vec2 tile=fract(vGrassWorld.xz/1.5);float joint=step(tile.x,.02)+step(tile.y,.02);gl_FragColor.rgb*=1.-min(joint,1.)*.1+(mlHash(floor(vGrassWorld.xz/1.5))-.5)*.05;"}`,
         );
     };
-    material.customProgramCacheKey = () => `metro-room-surround-${home ? "lawn" : "paving"}`;
+    material.customProgramCacheKey = () =>
+      `metro-room-surround-${home ? "lawn" : "paving"}`;
     material.depthWrite = false;
     return material;
   }, [home, radius]);
   useEffect(() => () => ground.dispose(), [ground]);
   useFrame(() => {
     // The room key light is strong; keep the lawn calmer than the street grass.
-    if (home) ground.color.copy(timeOfDay.ground).lerp(lawnShade, 0.5).multiplyScalar(0.58);
-    else ground.color.lerpColors(paving, pavingNight, dark ? 1 : timeOfDay.nightFactor * 0.7);
+    if (home)
+      ground.color
+        .copy(timeOfDay.ground)
+        .lerp(lawnShade, 0.5)
+        .multiplyScalar(0.58);
+    else
+      ground.color.lerpColors(
+        paving,
+        pavingNight,
+        dark ? 1 : timeOfDay.nightFactor * 0.7,
+      );
   });
   const trees = useMemo<TreeSpot[]>(() => {
     if (dark) return [];
@@ -112,8 +125,16 @@ export function RoomPlinth({ room }: { room: string }) {
   }, [home, dark, w, d]);
   return (
     <group name="room-surroundings">
-      <mesh name="room-stage-plinth" geometry={geometry} receiveShadow raycast={noPick}>
-        <meshStandardMaterial color={home ? "#cbbba3" : "#b9b2a6"} roughness={0.92} />
+      <mesh
+        name="room-stage-plinth"
+        geometry={geometry}
+        receiveShadow
+        raycast={noPick}
+      >
+        <meshStandardMaterial
+          color={home ? "#cbbba3" : "#b9b2a6"}
+          roughness={0.92}
+        />
       </mesh>
       <mesh
         name="room-surround-ground"

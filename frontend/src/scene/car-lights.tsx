@@ -48,7 +48,8 @@ export function CarLights({
     if (bulbs.current) bulbs.current.visible = on;
     if (pools.current) {
       pools.current.visible = on;
-      (pools.current.material as THREE.MeshBasicMaterial).opacity = 0.055 * lights;
+      (pools.current.material as THREE.MeshBasicMaterial).opacity =
+        0.055 * lights;
     }
     if (!source.current || !on) return;
     for (let i = 0; i < count; i++) {

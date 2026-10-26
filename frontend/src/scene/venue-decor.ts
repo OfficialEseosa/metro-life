@@ -7,9 +7,12 @@ import type { Prop } from "./kaykit-props";
  */
 type Spot = { x: number; z: number; r: number };
 function clearance(layout: RoomLayout) {
-  const boxes = (layout as RoomLayout & {
-      boxes?: { x: number; z: number; w: number; d: number }[];
-    }).boxes ?? layout.furniture,
+  const boxes =
+      (
+        layout as RoomLayout & {
+          boxes?: { x: number; z: number; w: number; d: number }[];
+        }
+      ).boxes ?? layout.furniture,
     stations = layout.stations,
     exit = layout.exit ?? { x: 0, z: (layout.bounds?.d ?? 10) / 2 },
     hw = (layout.bounds?.w ?? 12) / 2,
@@ -50,9 +53,29 @@ export function venueDecor(type: string, layout: RoomLayout): Prop[] {
   const roundSet = (x: number, z: number) => {
     if (!ok({ x, z, r: 1.4 })) return;
     out.push(
-      { pack: "restaurant", name: "table_round_A_small_decorated", x, z, s: 0.62 },
-      { pack: "restaurant", name: "chair_A", x: x - 0.95, z, ry: Math.PI / 2, s: 0.68 },
-      { pack: "restaurant", name: "chair_A", x: x + 0.95, z, ry: -Math.PI / 2, s: 0.68 },
+      {
+        pack: "restaurant",
+        name: "table_round_A_small_decorated",
+        x,
+        z,
+        s: 0.62,
+      },
+      {
+        pack: "restaurant",
+        name: "chair_A",
+        x: x - 0.95,
+        z,
+        ry: Math.PI / 2,
+        s: 0.68,
+      },
+      {
+        pack: "restaurant",
+        name: "chair_A",
+        x: x + 0.95,
+        z,
+        ry: -Math.PI / 2,
+        s: 0.68,
+      },
     );
   };
   // A row of seats spread perpendicular to the way they face.
@@ -61,30 +84,104 @@ export function venueDecor(type: string, layout: RoomLayout): Prop[] {
       az = Math.abs(Math.sin(ry));
     for (let i = 0; i < count; i++) {
       const t = (i - (count - 1) / 2) * 0.62;
-      add({ pack: "furniture", name: "chair_C", x: x + t * ax, z: z + t * az, ry, s: 0.62 }, 0.35);
+      add(
+        {
+          pack: "furniture",
+          name: "chair_C",
+          x: x + t * ax,
+          z: z + t * az,
+          ry,
+          s: 0.62,
+        },
+        0.35,
+      );
     }
   };
   if (type === "cafe" || type === "retail") {
     for (const x of [-4.6, -2.8, 2.8, 4.6, 10.2, 12])
-      add({ pack: "restaurant", name: ["crate_tomatoes", "crate_carrots", "crate_lettuce"][Math.abs(Math.round(x * 3)) % 3], x, z: -hd + 1.7, ry: 0.1 * x, s: 0.42 }, 0.5);
+      add(
+        {
+          pack: "restaurant",
+          name: ["crate_tomatoes", "crate_carrots", "crate_lettuce"][
+            Math.abs(Math.round(x * 3)) % 3
+          ],
+          x,
+          z: -hd + 1.7,
+          ry: 0.1 * x,
+          s: 0.42,
+        },
+        0.5,
+      );
     roundSet(11.2, 6.6);
     roundSet(7.4, 8.1);
     roundSet(-11.5, 7.2);
     for (const x of [-10.2, -9.2, -8])
-      out.push({ pack: "restaurant", name: x < -9.5 ? "jar_A_medium" : x < -8.5 ? "jar_B_medium" : "menu", x, y: 0.92, z: -5.2, ry: 0.3, s: 0.55 });
+      out.push({
+        pack: "restaurant",
+        name: x < -9.5 ? "jar_A_medium" : x < -8.5 ? "jar_B_medium" : "menu",
+        x,
+        y: 0.92,
+        z: -5.2,
+        ry: 0.3,
+        s: 0.55,
+      });
     plant(-hw + 1, hd - 1);
     plant(hw - 1, -hd + 2.2, false);
   } else if (type === "club") {
     out.push(
-      { pack: "furniture", name: "couch_pillows", x: hw - 1.1, z: 2.6, ry: -Math.PI / 2, s: [0.75, 0.62, 0.62], tint: "#d9a6c4" },
-      { pack: "furniture", name: "couch_pillows", x: hw - 1.1, z: 9.0, ry: -Math.PI / 2, s: [0.75, 0.62, 0.62], tint: "#a7b6e6" },
-      { pack: "furniture", name: "rug_oval_A", x: hw - 3.2, z: 6.2, s: [1.4, 0.5, 2.2], tint: "#c39ad2" },
+      {
+        pack: "furniture",
+        name: "couch_pillows",
+        x: hw - 1.1,
+        z: 2.6,
+        ry: -Math.PI / 2,
+        s: [0.75, 0.62, 0.62],
+        tint: "#d9a6c4",
+      },
+      {
+        pack: "furniture",
+        name: "couch_pillows",
+        x: hw - 1.1,
+        z: 9.0,
+        ry: -Math.PI / 2,
+        s: [0.75, 0.62, 0.62],
+        tint: "#a7b6e6",
+      },
+      {
+        pack: "furniture",
+        name: "rug_oval_A",
+        x: hw - 3.2,
+        z: 6.2,
+        s: [1.4, 0.5, 2.2],
+        tint: "#c39ad2",
+      },
       { pack: "furniture", name: "lamp_standing", x: hw - 0.9, z: 5.8, s: 0.6 },
-      { pack: "furniture", name: "table_low", x: hw - 2.6, z: 2.6, ry: Math.PI / 2, s: 0.45 },
+      {
+        pack: "furniture",
+        name: "table_low",
+        x: hw - 2.6,
+        z: 2.6,
+        ry: Math.PI / 2,
+        s: 0.45,
+      },
     );
     for (const z of [-3, 0, 3])
-      add({ pack: "furniture", name: "chair_stool", x: -hw + 1.2, z, s: 0.66 }, 0.4);
-    add({ pack: "furniture", name: "shelf_B_large_decorated", x: -hw + 0.3, y: 1.6, z: 5, ry: Math.PI / 2, s: 0.9 }, 0.3);
+      add(
+        { pack: "furniture", name: "chair_stool", x: -hw + 1.2, z, s: 0.66 },
+        0.4,
+      );
+    add(
+      {
+        pack: "furniture",
+        name: "shelf_B_large_decorated",
+        x: -hw + 0.3,
+        y: 1.6,
+        z: 5,
+        ry: Math.PI / 2,
+        s: 0.9,
+      },
+      0.3,
+    );
   } else if (type === "airport") {
     for (const z of [5.4, 7.2, 9.0]) {
       seatRow(-7.2, z, 5, Math.PI);
@@ -104,9 +201,30 @@ export function venueDecor(type: string, layout: RoomLayout): Prop[] {
     ])
       plant(x, z);
     out.push(
-      { pack: "restaurant", name: "kitchencounter_straight_A_decorated", x: -hw + 1.0, z: -6.5, ry: Math.PI / 2, s: 0.75 },
-      { pack: "restaurant", name: "kitchencounter_straight_A", x: -hw + 1.0, z: -4.9, ry: Math.PI / 2, s: 0.75 },
-      { pack: "restaurant", name: "papertowel", x: -hw + 0.9, y: 0.75, z: -4.6, s: 0.5 },
+      {
+        pack: "restaurant",
+        name: "kitchencounter_straight_A_decorated",
+        x: -hw + 1.0,
+        z: -6.5,
+        ry: Math.PI / 2,
+        s: 0.75,
+      },
+      {
+        pack: "restaurant",
+        name: "kitchencounter_straight_A",
+        x: -hw + 1.0,
+        z: -4.9,
+        ry: Math.PI / 2,
+        s: 0.75,
+      },
+      {
+        pack: "restaurant",
+        name: "papertowel",
+        x: -hw + 0.9,
+        y: 0.75,
+        z: -4.6,
+        s: 0.5,
+      },
     );
     roundSet(-10.5, -9.5);
     roundSet(-16.5, -10);

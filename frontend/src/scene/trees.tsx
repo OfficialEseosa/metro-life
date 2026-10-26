@@ -18,7 +18,11 @@ const reduced =
  */
 function treeGeometry() {
   const parts: THREE.BufferGeometry[] = [];
-  const mark = (g: THREE.BufferGeometry, trunk: number, crown?: THREE.Vector3) => {
+  const mark = (
+    g: THREE.BufferGeometry,
+    trunk: number,
+    crown?: THREE.Vector3,
+  ) => {
     const p = g.getAttribute("position"),
       n = g.getAttribute("normal"),
       shade = new Float32Array(p.count),
@@ -143,7 +147,12 @@ export function Trees({
   return (
     <group name="fluffy-trees">
       {tiles.map((list, i) => (
-        <TreeTile key={i} spots={list} geometry={geometry} material={material} />
+        <TreeTile
+          key={i}
+          spots={list}
+          geometry={geometry}
+          material={material}
+        />
       ))}
     </group>
   );
@@ -173,7 +182,9 @@ function TreeTile({
       mesh.setMatrixAt(i, d.matrix);
       const species =
         h > 0.92 ? 4 : Math.floor(hash(s.x * 1.7, s.z * 0.3) * 4) % 4;
-      colour.copy(tints[species]).multiplyScalar(0.94 + hash(s.z, s.x * 2) * 0.12);
+      colour
+        .copy(tints[species])
+        .multiplyScalar(0.94 + hash(s.z, s.x * 2) * 0.12);
       mesh.setColorAt(i, colour);
     });
     mesh.instanceMatrix.needsUpdate = true;

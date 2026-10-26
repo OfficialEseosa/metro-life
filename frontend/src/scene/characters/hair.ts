@@ -191,7 +191,14 @@ function proceduralPieces(style: string) {
   if (style === "ponytail") {
     ball(0, 0.2, -0.128, 0.05, 0.05, 0.05);
     for (let i = 0; i < 5; i++)
-      ball(0, 0.165 - i * 0.04, -0.15 - i * 0.008, 0.036 - i * 0.003, 0.034, 0.034);
+      ball(
+        0,
+        0.165 - i * 0.04,
+        -0.15 - i * 0.008,
+        0.036 - i * 0.003,
+        0.034,
+        0.034,
+      );
   }
   if (style === "braids")
     for (const x of [-0.128, 0.128])

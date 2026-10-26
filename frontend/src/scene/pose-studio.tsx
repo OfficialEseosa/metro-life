@@ -32,7 +32,13 @@ function baseLook(body: string): Look {
   } as Look;
 }
 
-function Camera({ position, target }: { position: number[]; target: number[] }) {
+function Camera({
+  position,
+  target,
+}: {
+  position: number[];
+  target: number[];
+}) {
   const camera = useThree((s) => s.camera);
   useEffect(() => {
     camera.position.set(position[0], position[1], position[2]);
@@ -51,9 +57,23 @@ function Lights() {
   return (
     <>
       <color attach="background" args={[night ? "#1d2333" : "#e4d6c0"]} />
-      <hemisphereLight args={[night ? "#7a8cc4" : "#e0e9f2", night ? "#2a2a3a" : "#9c8c7d", night ? 0.6 : 1.1]} />
-      <directionalLight position={[-3, 6, 4]} intensity={night ? 0.9 : 2.4} color={night ? "#9fb6ff" : "#fff0d8"} />
-      <directionalLight position={[3, 2.5, -3]} intensity={0.6} color="#ffd9b0" />
+      <hemisphereLight
+        args={[
+          night ? "#7a8cc4" : "#e0e9f2",
+          night ? "#2a2a3a" : "#9c8c7d",
+          night ? 0.6 : 1.1,
+        ]}
+      />
+      <directionalLight
+        position={[-3, 6, 4]}
+        intensity={night ? 0.9 : 2.4}
+        color={night ? "#9fb6ff" : "#fff0d8"}
+      />
+      <directionalLight
+        position={[3, 2.5, -3]}
+        intensity={0.6}
+        color="#ffd9b0"
+      />
     </>
   );
 }
@@ -67,7 +87,9 @@ function Metrics() {
     scene.traverse((o) => {
       if (o instanceof THREE.Mesh && o.visible) {
         meshes++;
-        triangles += (o.geometry.index?.count ?? o.geometry.getAttribute("position").count) / 3;
+        triangles +=
+          (o.geometry.index?.count ??
+            o.geometry.getAttribute("position").count) / 3;
       }
     });
     Object.assign(window, {
@@ -109,7 +131,9 @@ function Single({ pose, body }: { pose: CharacterPose; body: string }) {
         actor?.traverse((o) => {
           if (
             o instanceof THREE.Bone &&
-            ["Body", "Head", "WristL", "WristR", "FootL", "FootR"].includes(o.name)
+            ["Body", "Head", "WristL", "WristR", "FootL", "FootR"].includes(
+              o.name,
+            )
           )
             bones[o.name] = o.getWorldPosition(new THREE.Vector3()).toArray();
         });
@@ -124,7 +148,9 @@ function Single({ pose, body }: { pose: CharacterPose; body: string }) {
   return (
     <>
       <Camera
-        position={close ? [0.25, 1.62, 1.05] : lying ? [2.6, 2.6, 3.2] : [2.6, 1.9, 3.6]}
+        position={
+          close ? [0.25, 1.62, 1.05] : lying ? [2.6, 2.6, 3.2] : [2.6, 1.9, 3.6]
+        }
         target={close ? [0, 1.56, 0] : [0, lying ? 0.5 : 0.85, 0]}
       />
       <Suspense fallback={null}>
@@ -187,7 +213,11 @@ function Grid({
         return (
           <group
             key={i}
-            position={[(col - (columns - 1) / 2) * spacing, 0, -row * spacing * 1.2]}
+            position={[
+              (col - (columns - 1) / 2) * spacing,
+              0,
+              -row * spacing * 1.2,
+            ]}
           >
             <Suspense fallback={null}>
               <RiggedCharacter
@@ -204,7 +234,13 @@ function Grid({
   );
 }
 
-export function PoseStudio({ pose, body }: { pose: CharacterPose | string; body: string }) {
+export function PoseStudio({
+  pose,
+  body,
+}: {
+  pose: CharacterPose | string;
+  body: string;
+}) {
   const q = query();
   useEffect(() => {
     setActorTimeWarp(Number(q.get("warp") ?? 1));
@@ -215,7 +251,13 @@ export function PoseStudio({ pose, body }: { pose: CharacterPose | string; body:
       const looks: Look[] = [];
       for (const sex of ["f", "m"])
         for (const hair of HAIR_STYLES)
-          looks.push({ ...baseLook(sex), hair, hairColor: ["#3b2a20", "#b07c45", "#1f1a17", "#a33b24"][looks.length % 4] });
+          looks.push({
+            ...baseLook(sex),
+            hair,
+            hairColor: ["#3b2a20", "#b07c45", "#1f1a17", "#a33b24"][
+              looks.length % 4
+            ],
+          });
       return {
         camera: [0, 3.2, 4.6],
         target: [0, 1.25, -1.6],
@@ -226,7 +268,13 @@ export function PoseStudio({ pose, body }: { pose: CharacterPose | string; body:
       const looks: Look[] = [];
       for (const sex of ["f", "m"])
         for (const style of ["casual", "street", "smart", "party", "work"])
-          looks.push({ ...baseLook(sex), style, top: ["#e46f5a", "#5b8fd1", "#2f4858", "#d97aa6", "#4e9f8a"][looks.length % 5] });
+          looks.push({
+            ...baseLook(sex),
+            style,
+            top: ["#e46f5a", "#5b8fd1", "#2f4858", "#d97aa6", "#4e9f8a"][
+              looks.length % 5
+            ],
+          });
       return {
         camera: [0, 1.8, 7.2],
         target: [0, 0.9, -0.6],
@@ -235,9 +283,19 @@ export function PoseStudio({ pose, body }: { pose: CharacterPose | string; body:
     }
     if (pose === "lab-faces") {
       const looks: Look[] = [];
-      for (const sex of (q.get("sex") ? [q.get("sex")!] : ["f", "m"]))
+      for (const sex of q.get("sex") ? [q.get("sex")!] : ["f", "m"])
         for (const face of ["soft", "bright", "angular", "freckled"])
-          looks.push({ ...baseLook(sex), face, skin: ["#f0c8a8", "#c08058", "#844e33", "#dda67c"][looks.length % 4], hair: sex === "f" ? ["bob", "long", "ponytail", "curly"][looks.length % 4] : ["short", "quiff", "spiky", "messy"][looks.length % 4] } as Look);
+          looks.push({
+            ...baseLook(sex),
+            face,
+            skin: ["#f0c8a8", "#c08058", "#844e33", "#dda67c"][
+              looks.length % 4
+            ],
+            hair:
+              sex === "f"
+                ? ["bob", "long", "ponytail", "curly"][looks.length % 4]
+                : ["short", "quiff", "spiky", "messy"][looks.length % 4],
+          } as Look);
       return {
         camera: [0, 1.62, 3.4],
         target: [0, 1.38, -0.2],
@@ -256,7 +314,18 @@ export function PoseStudio({ pose, body }: { pose: CharacterPose | string; body:
             looks={looks}
             columns={8}
             spacing={0.85}
-            pose={(i) => (["Idle", "Walk", "Talk", "Idle", "Phone", "Wave"] as CharacterPose[])[i % 6]}
+            pose={(i) =>
+              (
+                [
+                  "Idle",
+                  "Walk",
+                  "Talk",
+                  "Idle",
+                  "Phone",
+                  "Wave",
+                ] as CharacterPose[]
+              )[i % 6]
+            }
             options={(i) => residentOptions(ids[i])}
           />
         ),

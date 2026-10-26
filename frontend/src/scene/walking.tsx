@@ -550,20 +550,20 @@ export function Walking({
         target = frame.follows
           ? frame.target
           : motion.camera
-          ? new THREE.Vector3(
-              THREE.MathUtils.clamp(
-                control.target.x,
-                -frame.bounds.w / 2 + 1,
-                frame.bounds.w / 2 - 1,
-              ),
-              frame.target.y,
-              THREE.MathUtils.clamp(
-                control.target.z,
-                -frame.bounds.d / 2 + 1,
-                frame.bounds.d / 2 - 1,
-              ),
-            )
-          : frame.target,
+            ? new THREE.Vector3(
+                THREE.MathUtils.clamp(
+                  control.target.x,
+                  -frame.bounds.w / 2 + 1,
+                  frame.bounds.w / 2 - 1,
+                ),
+                frame.target.y,
+                THREE.MathUtils.clamp(
+                  control.target.z,
+                  -frame.bounds.d / 2 + 1,
+                  frame.bounds.d / 2 - 1,
+                ),
+              )
+            : frame.target,
         angle = motion.camera?.angle ?? frame.yaw,
         distance = motion.camera?.distance ?? frame.distance,
         height = motion.camera?.height ?? frame.height,
@@ -676,9 +676,10 @@ export function Walking({
           self && !self.busyUntil && !self.trip
             ? nearbyPerson(self, at, s.players)
             : undefined;
-      const current = self && s.socialTarget
-          ? s.players.find((player) => player.id === s.socialTarget?.id)
-          : undefined,
+      const current =
+          self && s.socialTarget
+            ? s.players.find((player) => player.id === s.socialTarget?.id)
+            : undefined,
         eligible =
           self && !self.busyUntil && !self.trip && current
             ? nearbyPerson(self, at, [current])
@@ -834,7 +835,9 @@ export function Walking({
               return (
                 (
                   current?.lifeAction as
-                    { startedAt?: number } | null | undefined
+                    | { startedAt?: number }
+                    | null
+                    | undefined
                 )?.startedAt ??
                 current?.busyStartedAt ??
                 undefined

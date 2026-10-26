@@ -5,7 +5,13 @@
  */
 import * as THREE from "three";
 import type { DonorKit } from "./kit";
-import { IRISES, hashString, luminance, pickWeighted, seeded } from "./palettes";
+import {
+  IRISES,
+  hashString,
+  luminance,
+  pickWeighted,
+  seeded,
+} from "./palettes";
 
 export type FaceStyle = "soft" | "bright" | "angular" | "freckled";
 export type FacePaint = {
@@ -40,9 +46,11 @@ function paintTile(
   look: FacePaint,
   closed: boolean,
 ) {
-  const style = (["soft", "bright", "angular", "freckled"].includes(look.face)
-      ? look.face
-      : "soft") as FaceStyle,
+  const style = (
+      ["soft", "bright", "angular", "freckled"].includes(look.face)
+        ? look.face
+        : "soft"
+    ) as FaceStyle,
     random = seeded(look.seed ^ 0x9e3779b9),
     iris = pickWeighted(IRISES, random()),
     hairBrow = shade(look.hairColor, 0.55),
@@ -62,8 +70,10 @@ function paintTile(
     lash = "#1d1410",
     eyeW =
       T * (style === "bright" ? 0.112 : style === "angular" ? 0.098 : 0.104),
-    eyeH = eyeW * (style === "bright" ? 0.78 : style === "angular" ? 0.64 : 0.72),
-    browTilt = (style === "angular" ? 0.2 : style === "bright" ? -0.05 : 0.06) +
+    eyeH =
+      eyeW * (style === "bright" ? 0.78 : style === "angular" ? 0.64 : 0.72),
+    browTilt =
+      (style === "angular" ? 0.2 : style === "bright" ? -0.05 : 0.06) +
       (random() - 0.5) * 0.08,
     browLift = style === "bright" ? 1.2 : 1;
   x.lineCap = "round";
@@ -83,7 +93,14 @@ function paintTile(
       x.save();
       x.clip();
       const r = eyeH * 0.78,
-        g = x.createRadialGradient(-r * 0.15, -r * 0.1, r * 0.1, 0, r * 0.05, r);
+        g = x.createRadialGradient(
+          -r * 0.15,
+          -r * 0.1,
+          r * 0.1,
+          0,
+          r * 0.05,
+          r,
+        );
       g.addColorStop(0, shade(iris, 1.6));
       g.addColorStop(0.55, iris);
       g.addColorStop(1, shade(iris, 0.55));
@@ -107,7 +124,15 @@ function paintTile(
       x.strokeStyle = lash;
       x.lineWidth = T * (look.sex === "f" ? 0.02 : 0.015);
       x.beginPath();
-      x.ellipse(0, eyeH * 0.12, eyeW * 1.04, eyeH * 1.1, 0, Math.PI * 1.06, Math.PI * 1.96);
+      x.ellipse(
+        0,
+        eyeH * 0.12,
+        eyeW * 1.04,
+        eyeH * 1.1,
+        0,
+        Math.PI * 1.06,
+        Math.PI * 1.96,
+      );
       x.stroke();
       x.lineWidth = T * (look.sex === "f" ? 0.026 : 0.022);
       x.beginPath();
@@ -124,7 +149,15 @@ function paintTile(
       x.strokeStyle = "rgba(70,35,25,.32)";
       x.lineWidth = T * 0.007;
       x.beginPath();
-      x.ellipse(0, eyeH * 0.05, eyeW * 0.95, eyeH * 1.02, 0, Math.PI * 0.18, Math.PI * 0.82);
+      x.ellipse(
+        0,
+        eyeH * 0.05,
+        eyeW * 0.95,
+        eyeH * 1.02,
+        0,
+        Math.PI * 0.18,
+        Math.PI * 0.82,
+      );
       x.stroke();
     } else {
       // Closed lid: a gentle downward curve with lashes.
@@ -176,10 +209,15 @@ function paintTile(
     }
   }
   // Lips: a little darker and warmer than the skin; a small closed smile.
-  const lip = mix(shade(look.skin, 0.72), "#b04a43", look.sex === "f" ? 0.45 : 0.22),
+  const lip = mix(
+      shade(look.skin, 0.72),
+      "#b04a43",
+      look.sex === "f" ? 0.45 : 0.22,
+    ),
     mw = T * (style === "bright" ? 0.075 : 0.062),
     my = T * 0.71,
-    smile = T * (style === "bright" ? 0.026 : style === "angular" ? 0.008 : 0.016);
+    smile =
+      T * (style === "bright" ? 0.026 : style === "angular" ? 0.008 : 0.016);
   x.fillStyle = lip;
   x.beginPath();
   x.moveTo(T / 2 - mw, my);
@@ -197,7 +235,9 @@ function paintTile(
 type Entry = { texture: THREE.CanvasTexture; users: number };
 const textures = new Map<string, Entry>();
 export function faceKey(look: FacePaint, size: number) {
-  return [look.face, look.skin, look.hairColor, look.sex, look.seed, size].join("|");
+  return [look.face, look.skin, look.hairColor, look.sex, look.seed, size].join(
+    "|",
+  );
 }
 /** Shared, reference-counted face atlas (open | closed). */
 export function acquireFaceTexture(look: FacePaint, size = 256) {
@@ -312,7 +352,10 @@ export function faceMaterial(texture: THREE.Texture) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.faceBlink = blink;
     shader.fragmentShader = shader.fragmentShader
-      .replace("#include <common>", "#include <common>\nuniform float faceBlink;")
+      .replace(
+        "#include <common>",
+        "#include <common>\nuniform float faceBlink;",
+      )
       .replace(
         "#include <map_fragment>",
         "vec4 sampledDiffuseColor = texture2D( map, vMapUv + vec2( faceBlink * 0.5, 0.0 ) );\ndiffuseColor *= sampledDiffuseColor;",
