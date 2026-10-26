@@ -26,6 +26,76 @@ import { bodyCondition, visiblePose, velocityFacing } from "./character-life";
 import { LifeBubble, StinkCloud } from "./speech-bubbles";
 import { roomFloorHeight } from "./venue-zones";
 import { roomView, streetView } from "./room-camera";
+import { lyingHipHeight } from "./furniture-models";
+import { COOK_POT } from "./characters/actor";
+import type { CityId } from "../api/types";
+
+/**
+ * Hip height on a slot. A bed's own model decides how high a sleeper lies, so the body rests on
+ * the mattress under the duvet whatever height the slot carries; seats keep the slot height.
+ */
+function restingHip(
+  city: CityId,
+  room: string | null | undefined,
+  slot: { id: string; station?: string; pose: string; y?: number },
+) {
+  const type = roomType(room);
+  if (type && (slot.pose === "Sleep" || slot.pose === "Lie")) {
+    const piece = roomLayout(city, type).furniture.find(
+      (f) =>
+        f.id === (slot.station ?? slot.id) ||
+        f.slots?.some((s) => s.id === slot.id),
+    );
+    const lying = piece && lyingHipHeight(piece.kind);
+    if (lying !== undefined) return lying;
+  }
+  return slot.y ?? 0;
+}
+
+type StageSlot = {
+  id: string;
+  station?: string;
+  pose: string;
+  x: number;
+  z: number;
+  face: number;
+};
+/** A cook stands this far from the stove's front so the pot (COOK_POT, own frame) sits on the hob. */
+const COOK_STAND = COOK_POT.z - 0.2;
+/**
+ * Where the body goes for a home slot, read from the furniture itself: seats are sat in facing
+ * out of their front, and a cook stands square to the stove's front with the pot over the hob,
+ * whichever side the walk-up point is on. Other slots are used as given.
+ */
+function stagedSlot(
+  city: CityId,
+  room: string | null | undefined,
+  slot: StageSlot,
+  pose: string,
+): StageSlot {
+  if (roomType(room) !== "home") return slot;
+  const piece = roomLayout(city, "home").furniture.find(
+    (f) =>
+      f.id === (slot.station ?? slot.id) ||
+      f.slots?.some((s) => s.id === slot.id),
+  );
+  if (!piece) return slot;
+  if (
+    (slot.pose === "Sit" || slot.pose === "SitTalk") &&
+    ["chair", "sofa", "bench"].includes(piece.kind)
+  )
+    return { ...slot, face: piece.angle };
+  if (pose === "Cook" && piece.kind === "stove") {
+    const reach = piece.d / 2 + COOK_STAND;
+    return {
+      ...slot,
+      x: piece.x + Math.sin(piece.angle) * reach,
+      z: piece.z + Math.cos(piece.angle) * reach,
+      face: piece.angle + Math.PI,
+    };
+  }
+  return slot;
+}
 
 export function Walking({
   controls,
@@ -46,6 +116,7 @@ export function Walking({
     socialUntil = useRef(0);
   const activityPath = useRef<{ x: number; z: number }[]>([]),
     lastSlot = useRef(""),
+    stage = useRef<StageSlot | null>(null),
     releasePoint = useRef<{ x: number; z: number } | null>(null);
   const visualRevision = useRef(motion.teleport);
   const pending = useRef(false),
@@ -407,6 +478,9 @@ export function Walking({
       slot = moving ? null : s.sim?.activitySlot,
       slotKey = slot ? `${at.room}:${slot.id}:${s.sim?.busyUntil ?? ""}` : "";
     if (slotKey !== lastSlot.current) {
+      stage.current = slot
+        ? stagedSlot(city, at.room, slot, visiblePose(s.sim ?? sim))
+        : null;
       if (slot && at.room) {
         const type = roomType(at.room)!,
           station = roomLayout(city, type).stations.find(
@@ -425,7 +499,7 @@ export function Walking({
             { x: visual.current.x, z: visual.current.z },
             approach,
           ),
-          { x: slot.x, z: slot.z },
+          { x: stage.current!.x, z: stage.current!.z },
         ];
         releasePoint.current = approach;
       } else {
@@ -447,9 +521,9 @@ export function Walking({
       beforeZ = visual.current.z;
     const waypoint = activityPath.current[0],
       goal = new THREE.Vector3(
-        waypoint?.x ?? slot?.x ?? at.x,
+        waypoint?.x ?? (slot && stage.current?.x) ?? at.x,
         0,
-        waypoint?.z ?? slot?.z ?? at.z,
+        waypoint?.z ?? (slot && stage.current?.z) ?? at.z,
       ),
       gap = visual.current.distanceTo(goal),
       staging = gap > 0.035 || activityPath.current.length > 1,
@@ -492,7 +566,7 @@ export function Walking({
         speed > 0.08
           ? Math.atan2(vx, vz)
           : !staging && slot
-            ? slot.face
+            ? (stage.current?.face ?? slot.face)
             : ref.current.rotation.y;
     renderedSpeed.current = speed;
     ref.current.rotation.y = velocityFacing(
@@ -510,7 +584,7 @@ export function Walking({
         ) > 0.16;
     hip.current =
       !staging && !turningToSlot && seated && slot?.y !== undefined
-        ? slot.y - groundY.current
+        ? restingHip(city, at.room, slot) - groundY.current
         : undefined;
     stagedPose.current =
       speed > 0.08
@@ -532,6 +606,17 @@ export function Walking({
                       ? "Wave"
                       : "Talk"
                     : "Idle"));
+    if (import.meta.env.DEV)
+      (window as unknown as { __metroPlayer?: unknown }).__metroPlayer = {
+        pose: stagedPose.current,
+        x: visual.current.x,
+        z: visual.current.z,
+        y: groundY.current,
+        hip: hip.current,
+        face: ref.current.rotation.y,
+        staging,
+        path: activityPath.current.map((q) => [q.x, q.z]),
+      };
     // After a teleport the camera jumps to the player instead of sweeping across the map.
     const snap = motion.snapCamera && motion.follow;
     if (snap) {

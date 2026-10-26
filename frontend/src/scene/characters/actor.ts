@@ -468,6 +468,8 @@ const shared = {
   })(),
 };
 
+const hips = new THREE.Vector3();
+
 type PropName = "pot" | "spoon" | "phone" | "blanket" | "book" | "guitar";
 
 // ---------------------------------------------------------------- locomotion analysis
@@ -1419,8 +1421,13 @@ export class CharacterActor {
       b.add(c).multiplyScalar(0.5);
       const length = a.distanceTo(b) + 0.4,
         mid = c.addVectors(a, b).multiplyScalar(0.5);
-      blanket.position.set(mid.x, Math.max(a.y + 0.05, feetTop), mid.z);
-      blanket.scale.set(0.78, 0.24, length);
+      // The hip lies about 0.12 m above whatever the body rests on: drape from there, so the
+      // duvet's hem meets the mattress instead of hovering over it.
+      local("Hips", hips);
+      const rest = hips.y - 0.12,
+        top = Math.max(a.y + 0.14, feetTop);
+      blanket.position.set(mid.x, (rest + top) / 2, mid.z);
+      blanket.scale.set(0.92, Math.max(0.12, top - rest), length);
       blanket.rotation.set(0, Math.atan2(a.x - b.x, a.z - b.z), 0);
     }
   }

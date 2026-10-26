@@ -16,6 +16,19 @@ export const MODELLED_KINDS = new Set([
   "shelf",
 ]);
 
+/** Height of the home bed model (its mattress top sits at half of it). */
+const BED_HEIGHT = 0.62;
+/** Hip above the mattress when lying on the back: the duvet then rests on the body, not in the air. */
+const LYING_HIP_LIFT = 0.12;
+
+/**
+ * Hip height for someone lying on this piece, measured from the fitted model, or undefined when
+ * the piece is not something to lie on (callers then keep the slot's own height).
+ */
+export function lyingHipHeight(kind: string) {
+  return kind === "bed" ? BED_HEIGHT / 2 + LYING_HIP_LIFT : undefined;
+}
+
 type Piece = {
   id?: string;
   kind: string;
@@ -78,7 +91,7 @@ export function furnitureProps(piece: Piece): Prop[] {
         0,
         0,
         -Math.PI / 2,
-        [d / 3.1, 0.62, w / 3],
+        [d / 3.1, BED_HEIGHT, w / 3],
         soften(piece.color),
       );
       break;

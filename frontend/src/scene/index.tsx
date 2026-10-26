@@ -105,6 +105,7 @@ declare global {
       };
       hidePins: (hidden: boolean) => void;
       drawBreakdown: () => Record<string, number>;
+      scene: THREE.Scene;
       screenPoint: (
         x: number,
         y: number,
@@ -827,6 +828,7 @@ function City({
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     window.__metroScene = {
+      scene,
       occlusionDemo: (enabled) => {
         const player = scene.getObjectByName("controlled-player");
         if (!player) return;
