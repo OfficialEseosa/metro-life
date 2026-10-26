@@ -8,7 +8,7 @@ import { useStore } from "../store";
 import { Builder } from "./geometry";
 import { RoomWalls, WallMounted } from "./room-walls";
 import { roomPalette, roomTexture } from "./room-surfaces";
-import { PropBatch, type Prop } from "./kaykit-props";
+import { PropBatch, preloadProps, type Prop } from "./kaykit-props";
 import { furnitureProps, MODELLED_KINDS } from "./furniture-models";
 import { timeOfDay } from "../lighting";
 
@@ -72,6 +72,127 @@ function proceduralPiece(f: Piece, palette: ReturnType<typeof roomPalette>) {
   return b.build({ bakeAO: true });
 }
 
+/**
+ * A quick stand-in for a modelled piece, shaped and coloured like it, shown only for the
+ * moment the furniture packs are still decoding (never an empty room).
+ */
+function silhouettePiece(f: Piece, palette: ReturnType<typeof roomPalette>) {
+  const b = new Builder(),
+    w = f.w,
+    d = f.d,
+    fabric = f.color ?? palette.fabric,
+    wood = "#8a5d3e";
+  switch (f.kind) {
+    case "bed":
+      b.box(0, 0.2, 0, w, 0.3, d, wood);
+      b.box(0, 0.42, 0, w * 0.96, 0.16, d * 0.94, "#f1ede4");
+      b.box(-w * 0.12, 0.52, 0, w * 0.72, 0.06, d * 0.96, fabric);
+      b.box(w * 0.36, 0.56, 0, w * 0.18, 0.1, d * 0.8, "#ffffff");
+      b.box(w / 2 - 0.05, 0.55, 0, 0.1, 0.9, d, wood);
+      break;
+    case "chair":
+    case "sofa":
+    case "bench":
+      b.box(0, 0.22, 0.04, w, 0.36, d * 0.9, fabric);
+      b.box(0, 0.6, -d / 2 + 0.12, w, 0.5, 0.24, fabric);
+      for (const x of [-w / 2 + 0.08, w / 2 - 0.08])
+        b.box(x, 0.48, 0.02, 0.16, 0.24, d * 0.86, fabric);
+      break;
+    case "stove":
+      b.box(0, 0.39, 0, w, 0.78, d, "#c9473f");
+      b.box(0, 0.8, 0, w, 0.04, d, "#7c8689");
+      b.box(0, 0.38, d / 2 + 0.005, w * 0.7, 0.36, 0.01, "#3a3f44");
+      break;
+    case "fridge":
+      b.box(0, 0.95, 0, w, 1.9, d, "#e8ecea");
+      break;
+    case "sink":
+      b.box(0, 0.43, 0, w, 0.86, d, "#d9d3c7");
+      b.box(0, 0.87, 0, w, 0.04, d, "#a8b2b4");
+      break;
+    case "desk":
+    case "table":
+      b.box(0, 0.74, 0, w, 0.05, d, wood);
+      for (const x of [-w / 2 + 0.06, w / 2 - 0.06])
+        for (const z of [-d / 2 + 0.06, d / 2 - 0.06])
+          b.box(x, 0.36, z, 0.06, 0.72, 0.06, wood);
+      break;
+    case "lamp":
+      b.cylinder(0, 0.02, 0, w * 0.3, 0.04, "#5a4a3c", 12);
+      b.cylinder(0, 0.75, 0, 0.025, 1.45, "#5a4a3c", 6);
+      b.cylinder(0, 1.5, 0, w * 0.3, 0.3, "#f6e7c8", 12, w * 0.2);
+      break;
+    case "rug":
+      b.box(0, 0.008, 0, w, 0.012, d, fabric);
+      break;
+    case "shelf":
+      b.box(0, 0.6, 0, w, 1.2, d, wood);
+      break;
+    default:
+      b.box(0, 0.4, 0, w, 0.8, d, fabric);
+  }
+  return b.build();
+}
+
+function FurnitureSilhouettes({
+  pieces,
+  palette,
+}: {
+  pieces: Piece[];
+  palette: ReturnType<typeof roomPalette>;
+}) {
+  const shapes = useMemo(
+    () => pieces.map((f) => ({ f, geometry: silhouettePiece(f, palette) })),
+    [pieces, palette],
+  );
+  useEffect(() => () => shapes.forEach((s) => s.geometry.dispose()), [shapes]);
+  useFrame(() => homeLog("silhouettes"));
+  return (
+    <group name="home-furniture-silhouettes">
+      {shapes.map(({ f, geometry }) => (
+        <mesh
+          key={f.id}
+          name={`home-furniture:${f.id}`}
+          geometry={geometry}
+          position={[f.x, 0, f.z]}
+          rotation={[0, f.angle, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial vertexColors roughness={0.6} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Dev only: which furniture state each rendered frame of the home showed, for load checks. */
+function homeLog(state: string) {
+  if (!import.meta.env.DEV) return;
+  const w = window as unknown as {
+      __metroHomeLog?: { state: string; t: number; frames: number }[];
+    },
+    log = (w.__metroHomeLog ??= []),
+    last = log[log.length - 1];
+  if (last?.state === state) last.frames++;
+  else log.push({ state, t: Math.round(performance.now()), frames: 1 });
+}
+function ModelsShown() {
+  useFrame(() => homeLog("models"));
+  return null;
+}
+
+/** Start both furniture packs as soon as a life is loaded, so the home is furnished on its first frame. */
+function preloadWithLife() {
+  if (useStore.getState().sim) return preloadProps();
+  const stop = useStore.subscribe((s) => {
+    if (!s.sim) return;
+    stop();
+    preloadProps();
+  });
+}
+preloadWithLife();
+
 /** Furniture is KayKit models fitted to the same footprints Buy mode and collision use. */
 export function FurnishedHome() {
   const city = useStore((s) => s.city),
@@ -116,17 +237,19 @@ export function FurnishedHome() {
         angle: f.angle,
       }));
   const cooking = useCooking();
+  const modelledPieces = useMemo(
+    () => furniture.filter((f) => MODELLED_KINDS.has(f.kind)),
+    [furniture],
+  );
   const modelled = useMemo(
     () =>
-      furniture
-        .filter((f) => MODELLED_KINDS.has(f.kind))
-        .map((f) => ({
+      modelledPieces.map((f) => ({
           f,
           props: furnitureProps(f).filter(
             (p) => !(cooking && p.name === "pot_A_stew"),
           ),
         })),
-    [furniture, cooking],
+    [modelledPieces, cooking],
   );
   // Wall art and a sill plant: decoration that never takes floor space from Buy mode.
   const decor = useMemo<Prop[]>(
@@ -214,10 +337,18 @@ export function FurnishedHome() {
           />
         </Suspense>
       </WallMounted>
-      <Suspense fallback={null}>
+      <Suspense
+        fallback={
+          <FurnitureSilhouettes
+            pieces={modelledPieces}
+            palette={palette}
+          />
+        }
+      >
         {modelled.map(({ f, props }) => (
           <PropBatch key={f.id} props={props} name={`home-furniture:${f.id}`} />
         ))}
+        <ModelsShown />
       </Suspense>
       {pieces.map(({ f, geometry }) => (
         <mesh

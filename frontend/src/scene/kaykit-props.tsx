@@ -132,6 +132,8 @@ export function PropBatch({
   /** Draw every batch with this material (Buy mode ghost). */
   override?: THREE.Material;
 }) {
+  // Ask for both packs before either suspends, so they load side by side, not one after the other.
+  preloadProps();
   const furniture = useGLTF(FURNITURE_PACK).scene,
     restaurant = useGLTF(RESTAURANT_PACK).scene;
   const batches = useMemo(
