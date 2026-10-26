@@ -21,7 +21,9 @@ import type {
   Plots,
   ServerEvent,
   Sim,
+  SocialInboxEntry,
   SocialKind,
+  SocialReceived,
   Stats,
   Rect,
   User,
@@ -42,6 +44,12 @@ export type SocialMoment = {
 };
 
 let socialSequence = 0;
+
+/** Received social moments older than this before the page opened are not shown again. */
+const SOCIAL_HISTORY_MS = 2 * 60_000;
+const pageOpenedAt = Date.now();
+/** Highest received social seq shown for `user` (see receiveSocial in the store). */
+const socialShown = { user: "", seq: 0 };
 
 export type Panel =
   | null
@@ -447,6 +455,52 @@ export const useStore = create<State>((set, get) => {
     }, delay);
   };
 
+  /**
+   * Show a social moment another player sent to this life, exactly once. It can arrive on the
+   * socket, again on a new socket (replay), and in `sim.socialInbox`; the highest shown seq is
+   * remembered per life, also across reloads. Moments from well before this page opened are history.
+   */
+  const receiveSocial = (e: SocialReceived | SocialInboxEntry) => {
+    const own = get().sim;
+    const userId = own?.userId ?? get().user?.id ?? "";
+    if (e.seq != null) {
+      const openedAt = pageOpenedAt + (serverNow() - Date.now());
+      if (!userId || e.at < openedAt - SOCIAL_HISTORY_MS) return false;
+      if (socialShown.user !== userId) {
+        socialShown.user = userId;
+        socialShown.seq = 0;
+        try {
+          socialShown.seq = Number(localStorage.getItem(`metro-social-seq:${userId}`)) || 0;
+        } catch {
+          // Storage can be blocked; the in-page record still prevents repeats.
+        }
+      }
+      if (e.seq <= socialShown.seq) return false;
+      socialShown.seq = e.seq;
+      try {
+        localStorage.setItem(`metro-social-seq:${userId}`, String(e.seq));
+      } catch {
+        // See above.
+      }
+    }
+    get().noticeSocial(e.text, {
+      kind: e.kind,
+      direction: "received",
+      actorId: e.fromId,
+      actorName: e.fromName,
+      targetId: own?.userId ?? "",
+      targetName: own?.username ?? "",
+    });
+    emitFeedback({
+      kind: "socialReceived",
+      title: e.text,
+      amount: e.kind === "gift" ? e.amount : undefined,
+      anchor: playerAnchor(e.fromId),
+      data: { social: e.kind, fromId: e.fromId, fromName: e.fromName },
+    });
+    return true;
+  };
+
   const onEvent = (e: ServerEvent) => {
     const { city } = get();
     switch (e.type) {
@@ -490,26 +544,9 @@ export const useStore = create<State>((set, get) => {
             });
         }
         break;
-      case "socialReceived": {
-        const own = get().sim;
-        get().noticeSocial(e.text, {
-          kind: e.kind,
-          direction: "received",
-          actorId: e.fromId,
-          actorName: e.fromName,
-          targetId: own?.userId ?? "",
-          targetName: own?.username ?? "",
-        });
-        emitFeedback({
-          kind: "socialReceived",
-          title: e.text,
-          amount: e.kind === "gift" ? e.amount : undefined,
-          anchor: playerAnchor(e.fromId),
-          data: { social: e.kind, fromId: e.fromId, fromName: e.fromName },
-        });
-        refreshSim();
+      case "socialReceived":
+        if (receiveSocial(e) && !e.replay) refreshSim();
         break;
-      }
       case "resync":
         void get().refresh("players", "chat");
         refreshSim();
@@ -549,6 +586,8 @@ export const useStore = create<State>((set, get) => {
         if (connected) {
           chatNewsSince = serverNow() - 2000;
           socket?.send({ type: "view", city: get().city });
+          // Anything that changed while the socket was down, including received social moments.
+          refreshSim();
           void get().refresh(
             "players",
             "chat",
@@ -952,6 +991,9 @@ export const useStore = create<State>((set, get) => {
     },
 
     setSim: (sim) => {
+      if (sim?.socialInbox?.length && sim.worldId === get().worldInfo?.id)
+        for (const entry of [...sim.socialInbox].sort((a, b) => a.seq - b.seq))
+          receiveSocial(entry);
       if (indoorTravelPending) return;
       if (sim && sim.worldId !== get().worldInfo?.id) return;
       installHomeDesign(sim?.homeDesign, sim?.homeLayout);

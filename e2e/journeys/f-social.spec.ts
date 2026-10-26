@@ -5,6 +5,8 @@ type Kind = "wave" | "hangout" | "gift";
 const GAIN: Record<Kind, number> = { wave: 2, hangout: 10, gift: 5 };
 
 test("f. wave, hang out and gift both ways", async ({ browser }, testInfo) => {
+  // Two software-rendered pages share the machine and six moments each wait for the receiver.
+  test.setTimeout(40 * 60_000);
   const a = await newPlayer(browser, testInfo);
   const b = await newPlayer(browser, testInfo);
   // Both quick starts arrive at the same spot outside Ponce Works Market, within reach of each other.

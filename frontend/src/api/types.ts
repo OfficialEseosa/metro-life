@@ -242,6 +242,8 @@ export type Friendship = {
 export type FirstDayStep =
   "outside" | "job" | "shift" | "meal" | "neighbour" | "rent";
 export type Sim = {
+  /** The latest social moments other players sent to this sim (newest last). */
+  socialInbox?: SocialInboxEntry[];
   /** Fresh meals bought at the market; each home cook uses one for extra hunger and fun. */
   pantry?: number;
   /** Private relationships for this life; omitted from public player presence. */
@@ -640,9 +642,27 @@ export type PlayerPatch = Pick<
 
 export type SocialKind = "wave" | "hangout" | "gift";
 
-/** Sent only to the target's own sockets when another resident waves, hangs out or gifts. */
+/** One received social moment, kept in the receiver's `Sim.socialInbox` until it ages out. */
+export type SocialInboxEntry = {
+  /** increases by one per received moment for this sim; the page shows each seq once */
+  seq: number;
+  kind: SocialKind;
+  fromId: string;
+  fromName: string;
+  text: string;
+  amount?: number;
+  /** server epoch ms */
+  at: number;
+};
+
+/**
+ * Sent only to the target's own sockets when another resident waves, hangs out or gifts. Every
+ * new socket also gets the recent inbox again with `replay: true`; pages skip seqs they have shown.
+ */
 export type SocialReceived = {
   type: "socialReceived";
+  seq?: number;
+  replay?: boolean;
   kind: SocialKind;
   fromId: string;
   fromName: string;
@@ -678,5 +698,5 @@ export type ServerEvent =
   /** On every game-hour change and at least every 5 s as a heartbeat. */
   | { type: "clock"; clock: Clock }
   | SocialReceived
-  /** The server skipped frames for this client; re-read players and chat over HTTP. */
+  /** Older servers: frames were skipped for this client; re-read players, chat and the sim. */
   | { type: "resync" };

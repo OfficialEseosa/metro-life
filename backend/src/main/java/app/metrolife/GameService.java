@@ -1577,18 +1577,39 @@ public class GameService {
       out.put("targetName", target.path("username").asText());
     }
     out.put("kind", kind);
-    if (target != null && !target.path("npc").asBoolean() && userFrames != null) {
-      ObjectNode frame = object()
-        .put("type", "socialReceived")
+    if (target != null && !target.path("npc").asBoolean()) {
+      // The receiver's inbox keeps the moment until their page has shown it: it travels in
+      // /api/sim and is replayed to every new socket, so a dropped or slow socket cannot lose it.
+      var inbox = target.withArray("socialInbox");
+      long seq = inbox.isEmpty() ? 1 : inbox.get(inbox.size() - 1).path("seq").asLong() + 1;
+      ObjectNode entry = inbox
+        .addObject()
+        .put("seq", seq)
         .put("kind", kind)
         .put("fromId", from.path("userId").asText())
         .put("fromName", from.path("username").asText())
         .put("text", out.path("text").asText())
         .put("at", now());
-      if (kind.equals("gift")) frame.put("amount", body.path("amount").asInt());
-      userFrames.accept(w.path("id").asText(), target.path("userId").asText(), frame.toString());
+      if (kind.equals("gift")) entry.put("amount", body.path("amount").asInt());
+      while (inbox.size() > SOCIAL_INBOX) inbox.remove(0);
+      if (userFrames != null) userFrames.accept(
+        w.path("id").asText(),
+        target.path("userId").asText(),
+        socialFrame(entry, false)
+      );
     }
     return out;
+  }
+
+  /** Received social moments kept per sim for late or reconnecting pages. */
+  static final int SOCIAL_INBOX = 12;
+
+  static String socialFrame(JsonNode entry, boolean replay) {
+    ObjectNode frame = ((ObjectNode) entry.deepCopy());
+    ObjectNode out = frame.objectNode().put("type", "socialReceived");
+    out.setAll(frame);
+    if (replay) out.put("replay", true);
+    return out.toString();
   }
 
   static boolean containsEmoji(String s) {

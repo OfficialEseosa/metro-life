@@ -42,13 +42,17 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
       sim = "",
       clock = "";
     final Set<String> chatSeen = new LinkedHashSet<>();
+    /**
+     * One-time frames (hello, chat, social moments, events) in order. They are never discarded: a
+     * slow reader receives every one of them, ahead of any snapshot frame.
+     */
     final Queue<String> outgoing = new ConcurrentLinkedQueue<>();
     final AtomicBoolean draining = new AtomicBoolean();
     final Map<String, Integer> resources = new HashMap<>();
-    /** Only the newest positions frame is worth sending; older ones are replaced, never queued. */
-    final AtomicReference<String> latestPositions = new AtomicReference<>();
-    /** Set when frames were discarded; the next tick resends a full snapshot. */
-    volatile boolean resync;
+    /** Snapshot frames: only the newest of each is worth sending; older ones are replaced, never queued. */
+    final AtomicReference<String> latestPresence = new AtomicReference<>(),
+      latestClock = new AtomicReference<>(),
+      latestPositions = new AtomicReference<>();
     long clockSentAt;
 
     Client(WebSocketSession ws, String token, String wid) {
@@ -58,8 +62,14 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
     }
   }
 
-  /** Queued frames per client before the backlog is discarded and replaced by a snapshot. */
-  static final int MAX_QUEUED = 64;
+  /**
+   * One-time frames a client may fall behind by. Snapshot frames never count (they are coalesced),
+   * so this is only reached by a reader that has stopped reading: its socket is closed, and the
+   * reconnect reloads everything over HTTP and replays the social inbox (see replaySocial).
+   */
+  static final int MAX_QUEUED = 2048;
+  /** Received social moments younger than this are replayed to every newly opened socket. */
+  static final long SOCIAL_REPLAY_MS = 10 * 60_000;
   /** Heartbeat: a clock frame at least this often, so clients can detect a dead link. */
   static final long CLOCK_HEARTBEAT_MS = 5000;
 
@@ -145,7 +155,17 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
       }
       g.community.online.put(c.wid + ":" + uid, g.now());
       send(c, g.object().put("type", "hello").put("worldId", c.wid).set("clock", g.clock(w)).toString());
+      if (s instanceof ObjectNode sim) replaySocial(c, sim);
     }
+  }
+
+  /**
+   * A socket that was closed, dropped or not yet open when a social moment arrived must still hear
+   * about it: every new socket gets the recent inbox again, and the page ignores what it has seen.
+   */
+  void replaySocial(Client c, ObjectNode sim) {
+    for (JsonNode entry : sim.path("socialInbox"))
+      if (entry.path("at").asLong() >= g.now() - SOCIAL_REPLAY_MS) send(c, GameService.socialFrame(entry, true));
   }
 
   @Override
@@ -193,16 +213,24 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
   }
 
   /**
-   * Queue a frame. A slow client is never silently dropped: when its backlog is full the backlog
-   * is discarded, the client is told to resync, and the next tick resends a full snapshot.
+   * Queue a frame. Presence and clock frames are snapshots: an unsent one is replaced by the newer
+   * one. Every other frame is one-time and is kept until it is written; an identical pending
+   * "event" frame (a re-read trigger) is not queued twice.
    */
   void send(Client c, String frame) {
-    if (c.outgoing.size() >= MAX_QUEUED) {
-      c.outgoing.clear();
-      c.resync = true;
-      c.outgoing.add("{\"type\":\"resync\"}");
-    }
-    c.outgoing.add(frame);
+    if (frame.startsWith("{\"type\":\"presence\"")) c.latestPresence.set(frame);
+    else if (frame.startsWith("{\"type\":\"clock\"")) c.latestClock.set(frame);
+    else if (frame.startsWith("{\"type\":\"event\"") && c.outgoing.contains(frame)) return;
+    else if (c.outgoing.size() >= MAX_QUEUED) {
+      // The page has stopped reading. Close it; the reconnect resynchronises everything.
+      drop(c);
+      sends.submit(() -> {
+        try {
+          c.ws.close(CloseStatus.SESSION_NOT_RELIABLE);
+        } catch (Exception ignored) {}
+      });
+      return;
+    } else c.outgoing.add(frame);
     drain(c);
   }
 
@@ -212,9 +240,21 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
     drain(c);
   }
 
+  /** One-time frames first, then the newest roster, clock and positions. */
   String nextFrame(Client c) {
     String text = c.outgoing.poll();
+    if (text == null) text = c.latestPresence.getAndSet(null);
+    if (text == null) text = c.latestClock.getAndSet(null);
     return text != null ? text : c.latestPositions.getAndSet(null);
+  }
+
+  boolean pending(Client c) {
+    return (
+      !c.outgoing.isEmpty() ||
+      c.latestPresence.get() != null ||
+      c.latestClock.get() != null ||
+      c.latestPositions.get() != null
+    );
   }
 
   void drain(Client c) {
@@ -230,7 +270,7 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
         } catch (Exception ignored) {}
       } finally {
         c.draining.set(false);
-        if ((!c.outgoing.isEmpty() || c.latestPositions.get() != null) && c.ws.isOpen()) drain(c);
+        if (pending(c) && c.ws.isOpen()) drain(c);
       }
     });
   }
@@ -312,16 +352,6 @@ public class LiveWire extends TextWebSocketHandler implements WebSocketConfigure
         if (invalid.contains(c)) continue;
         ObjectNode ses = g.session(c.token, false),
           w = g.world(ses);
-        if (c.resync) {
-          // Frames were discarded: forget what this client has seen so everything is resent now.
-          c.resync = false;
-          c.presence = "";
-          c.positions = "";
-          c.sim = "";
-          c.clock = "";
-          c.resources.clear();
-          c.chatSeen.clear();
-        }
         ObjectNode p = g.community.players(w, c.city);
         String presence = p.path("players").toString();
         if (!presence.equals(c.presence)) {
