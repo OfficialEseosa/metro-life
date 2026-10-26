@@ -244,11 +244,11 @@ export function FurnishedHome() {
   const modelled = useMemo(
     () =>
       modelledPieces.map((f) => ({
-          f,
-          props: furnitureProps(f).filter(
-            (p) => !(cooking && p.name === "pot_A_stew"),
-          ),
-        })),
+        f,
+        props: furnitureProps(f).filter(
+          (p) => !(cooking && p.name === "pot_A_stew"),
+        ),
+      })),
     [modelledPieces, cooking],
   );
   // Wall art and a sill plant: decoration that never takes floor space from Buy mode.
@@ -339,10 +339,7 @@ export function FurnishedHome() {
       </WallMounted>
       <Suspense
         fallback={
-          <FurnitureSilhouettes
-            pieces={modelledPieces}
-            palette={palette}
-          />
+          <FurnitureSilhouettes pieces={modelledPieces} palette={palette} />
         }
       >
         {modelled.map(({ f, props }) => (
