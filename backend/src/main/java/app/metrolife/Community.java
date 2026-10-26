@@ -599,24 +599,45 @@ final class Community {
       for (JsonNode city : g.content.world.path("cities")) {
         String id = city.path("id").asText();
         ObjectNode meta = g.store.data.withObject("communityMeta").withObject(wid).withObject(id);
-        if (g.now() - meta.path("lastChat").asLong(g.now()) >= 120000) {
-          JsonNode n = residents()
-            .path(wid)
-            .path("npc-" + id + "-" + (g.clock(w).path("hour").asInt() % 3));
-          message(
-            w,
-            n,
-            id,
-            new String[] {
-              "Anyone sketching in the park today?",
-              "I found a good spot for a quiet lunch.",
-              "A walk around the neighbourhood always helps.",
-            }[g.clock(w).path("hour").asInt() % 3]
-          );
-          meta.put("lastChat", g.now());
+        if (!meta.has("nextChat")) meta.put("nextChat", g.now() + ResidentChat.gap());
+        if (g.now() >= meta.path("nextChat").asLong()) {
+          meta.put("nextChat", g.now() + ResidentChat.gap());
+          residentLine(w, id, meta);
         }
-        if (!meta.has("lastChat")) meta.put("lastChat", g.now());
       }
     }
+  }
+
+  /**
+   * One resident says something in a city's chat. Residents only speak after a player has (or into
+   * an empty room), so there is never more than one resident line between two player messages and
+   * people's own messages are never buried.
+   */
+  void residentLine(ObjectNode w, String city, ObjectNode meta) {
+    ArrayNode history = history(w, city);
+    if (!history.isEmpty() && history.get(history.size() - 1).path("npc").asBoolean()) return;
+    List<ObjectNode> speakers = new ArrayList<>();
+    for (JsonNode row : residents().path(w.path("id").asText()))
+      if (row.path("city").asText().equals(city) && row instanceof ObjectNode n) speakers.add(n);
+    if (speakers.isEmpty()) return;
+    ObjectNode n = speakers.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(speakers.size()));
+    String place = "";
+    for (JsonNode l : g.content.city(city).path("landmarks"))
+      if (l.path("id").asText().equals(n.path("loc").asText())) place = l.path("name").asText();
+    Set<String> recent = new HashSet<>();
+    for (JsonNode line : meta.path("recentLines")) recent.add(line.asText());
+    for (JsonNode m : history) recent.add(m.path("text").asText());
+    String line = ResidentChat.pick(
+      city,
+      g.clock(w).path("hour").asInt(),
+      n.path("activity").asText("walk").toLowerCase(Locale.ROOT),
+      place,
+      recent
+    );
+    if (line == null) return;
+    message(w, n, city, line);
+    ArrayNode recentLines = meta.withArray("recentLines");
+    recentLines.add(line);
+    while (recentLines.size() > ResidentChat.NO_REPEAT) recentLines.remove(0);
   }
 }
