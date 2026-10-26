@@ -204,12 +204,35 @@ export function ConnectionGate() {
   );
 }
 
-/** Non-blocking banner while the live connection is down during play. */
+/** A drop shorter than this is not worth a banner. */
+const BANNER_GRACE_MS = 5000;
+
+/**
+ * Non-blocking banner while the live connection is down during play. It follows the store, not a
+ * socket event: `reconnecting` is set when the socket closes and when the 15 s silence watchdog
+ * gives up on a dead link, and a socket that is not open with a drop time on record counts too.
+ */
 export function ReconnectBanner() {
-  const { connection, disconnectedAt: since, retryNow } = useConnection();
-  const now = useTick(connection === "reconnecting");
-  if (connection !== "reconnecting" || !since || now - since < 5000)
-    return null;
+  const {
+      connection,
+      connected,
+      disconnectedAt: since,
+      retryNow,
+    } = useConnection(),
+    down =
+      !!since &&
+      (connection === "reconnecting" ||
+        (connection === "online" && !connected)),
+    [waited, setWaited] = useState<number | null>(null);
+  useEffect(() => {
+    if (!down || !since) return;
+    const timer = setTimeout(
+      () => setWaited(since),
+      Math.max(0, since + BANNER_GRACE_MS - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [down, since]);
+  if (!down || waited !== since) return null;
   return (
     <div
       className="hud-toast reconnect-banner"
