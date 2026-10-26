@@ -27,12 +27,33 @@ function sharedData(): Plugin {
   }
 }
 
+/**
+ * Phosphor draws every icon in six weights and the bundle carries all of them. The game uses bold,
+ * duotone and fill, so the thin, light and regular drawings are dropped from the production build;
+ * a stray "regular" icon falls back to the duotone drawing instead of disappearing.
+ */
+function slimIcons(): Plugin {
+  return {
+    name: 'metro-slim-icons',
+    apply: 'build',
+    transform(code, id) {
+      if (!/@phosphor-icons[\\/]react[\\/]dist[\\/]defs[\\/]/.test(id)) return
+      const map = /const (\w+) = [^\n]*new Map\(\[/.exec(code)?.[1]
+      if (!map) return
+      const slim = code
+        .replace(/\n {2}\[\n {4}"(?:thin|light|regular)",[\s\S]*?\n {2}\],?(?=\n)/g, '')
+        .replace(/\n\]\);/, `\n]);\n${map}.set('regular', ${map}.get('duotone'));`)
+      return slim === code ? undefined : { code: slim, map: null }
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, root, '')
   const target = (env.METRO_API_PROXY || 'http://localhost:8080').replace(/\/+$/, '')
   return {
-    plugins: [react(), sharedData()],
+    plugins: [react(), sharedData(), slimIcons()],
     build: {
       rolldownOptions: {
         output: {

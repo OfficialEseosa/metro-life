@@ -177,7 +177,7 @@ export function ObjectActions() {
                     title={`Cancel ${item.label}`}
                     onClick={() => void cancelInteraction(item.id)}
                   >
-                    <X size={16} />
+                    <X size={16} weight="bold" />
                   </button>
                 </li>
               ))}
@@ -227,7 +227,7 @@ export function ObjectActions() {
                 aria-label="Close object actions"
                 onClick={closeObjectMenu}
               >
-                <X size={20} />
+                <X size={20} weight="bold" />
               </button>
             </div>
             <div className="object-pie-options">
