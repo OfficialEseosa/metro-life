@@ -344,17 +344,21 @@ final class SocialLife {
         .put("city", city)
         .put("neighborhood", definition.path("startingLife").path("neighborhood").asText())
         .put("aspiration", "founder");
-      int seed = Math.floorMod(g.user(ses).path("id").asText().hashCode(), 6);
-      setup
-        .putObject("look")
-        .put("body", seed % 2 == 0 ? "f" : "m")
-        .put("skin", new String[] { "#f2d3b5", "#d49a72", "#b47752", "#996340", "#7d4d34", "#603c2d" }[seed])
-        .put("hair", new String[] { "bob", "curly", "afro", "bun", "braids", "short" }[seed])
-        .put("hairColor", "#493326")
-        .put("top", new String[] { "#326957", "#bc6b45", "#4d6587", "#976b8c", "#d4b162", "#785443" }[seed])
-        .put("bottom", "#313c4b")
-        .put("style", "casual");
-      if (body.path("look").isObject()) setup.set("look", body.path("look").deepCopy());
+      var random = new java.util.Random();
+      ObjectNode look = body.path("look") instanceof ObjectNode requested
+        ? requested.deepCopy()
+        : ResidentStyle.randomLook(g.object(), random);
+      // Nobody should arrive as the twin of someone already in the city (quick starts all appear at
+      // the same door): a near-duplicate look is redrawn from the full palettes.
+      List<JsonNode> taken = new ArrayList<>();
+      String wid = w.path("id").asText();
+      for (JsonNode other : g.table("sims"))
+        if (
+          other.path("worldId").asText().equals(wid) &&
+          other.path("city").asText().equals(city) &&
+          other.path("look").isObject()
+        ) taken.add(other.path("look"));
+      setup.set("look", ResidentStyle.distinct(look, taken, random));
       if (!body.path("username").asText().isBlank()) setup.put("username", body.path("username").asText());
       g.setup(token, setup);
       s = g.sim(ses);

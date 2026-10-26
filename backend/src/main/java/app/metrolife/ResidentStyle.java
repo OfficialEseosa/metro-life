@@ -135,4 +135,84 @@ final class ResidentStyle {
         .put("shoeColor", shoes).put("style", "casual");
     return result;
   }
+
+  /** Hair styles a quick start may draw, per body (the creator offers all of them). */
+  static final String[] QUICK_HAIR_F = {"bob", "long", "ponytail", "bun", "curly", "afro", "braids",
+      "sideshave", "short", "messy"};
+  static final String[] QUICK_HAIR_M = {"short", "quiff", "spiky", "messy", "curly", "afro", "bald",
+      "long", "sideshave", "mohawk"};
+
+  /**
+   * How alike two looks read at street distance: 0 (nothing shared) to about 6 (twins). The top
+   * colour and the hair carry most of a silhouette, so they weigh the most.
+   */
+  static double likeness(com.fasterxml.jackson.databind.JsonNode a,
+      com.fasterxml.jackson.databind.JsonNode b) {
+    double score = 0;
+    if (a.path("body").asText().equals(b.path("body").asText())) score += .5;
+    if (a.path("hair").asText().equals(b.path("hair").asText())) score += 1;
+    if (close(a, b, "hairColor", 14)) score += 1;
+    if (close(a, b, "top", 18)) score += 1.5;
+    if (close(a, b, "bottom", 12)) score += .5;
+    if (close(a, b, "skin", 8)) score += 1;
+    if (a.path("style").asText().equals(b.path("style").asText())) score += .5;
+    return score;
+  }
+
+  private static boolean close(com.fasterxml.jackson.databind.JsonNode a,
+      com.fasterxml.jackson.databind.JsonNode b, String field, double limit) {
+    String x = a.path(field).asText(), y = b.path(field).asText();
+    if (!x.matches("#[0-9a-fA-F]{6}") || !y.matches("#[0-9a-fA-F]{6}")) return x.equals(y);
+    return deltaE(x, y) < limit;
+  }
+
+  /** Looks at or above this likeness count as near-twins. */
+  static final double TWIN = 3;
+
+  /** A fresh everyday look drawn from the full palettes. */
+  static ObjectNode randomLook(ObjectNode base, java.util.Random random) {
+    boolean female = random.nextBoolean();
+    String[] hair = female ? QUICK_HAIR_F : QUICK_HAIR_M;
+    String top = TOPS[random.nextInt(TOPS.length - 2)], bottom = BOTTOMS[random.nextInt(BOTTOMS.length)];
+    for (int i = 0; i < 6 && deltaE(top, bottom) < 15; i++) bottom = BOTTOMS[random.nextInt(BOTTOMS.length)];
+    String hairColor = random.nextDouble() < .05 ? HAIR_FUN : HAIR_NATURAL[random.nextInt(HAIR_NATURAL.length)];
+    String style = random.nextBoolean() ? "casual" : "street";
+    ObjectNode look = base.deepCopy();
+    look.put("body", female ? "f" : "m").put("skin", SKIN[random.nextInt(SKIN.length)])
+        .put("hair", hair[random.nextInt(hair.length)]).put("hairColor", hairColor)
+        .put("face", FACES[random.nextInt(FACES.length)]).put("top", top).put("bottom", bottom)
+        .put("style", style).put("shoeColor", SHOES[random.nextInt(SHOES.length)]);
+    ObjectNode everyday = look.withObject("outfits").putObject("everyday");
+    everyday.put("top", top).put("bottom", bottom).put("style", style)
+        .put("shoeColor", look.path("shoeColor").asText());
+    ObjectNode sleep = look.withObject("outfits").withObject("sleep");
+    if (!sleep.has("top")) sleep.put("top", PASTELS[random.nextInt(PASTELS.length)]);
+    return look;
+  }
+
+  /**
+   * The requested look, or when it nearly duplicates someone already in the city, the least alike
+   * of a handful of fresh draws from the full palettes.
+   */
+  static ObjectNode distinct(ObjectNode look, java.util.List<com.fasterxml.jackson.databind.JsonNode> taken,
+      java.util.Random random) {
+    ObjectNode best = look;
+    double bestScore = closest(look, taken);
+    for (int i = 0; i < 40 && bestScore >= TWIN; i++) {
+      ObjectNode candidate = randomLook(look, random);
+      double score = closest(candidate, taken);
+      if (score < bestScore) {
+        best = candidate;
+        bestScore = score;
+      }
+    }
+    return best;
+  }
+
+  static double closest(com.fasterxml.jackson.databind.JsonNode look,
+      java.util.List<com.fasterxml.jackson.databind.JsonNode> taken) {
+    double max = 0;
+    for (var other : taken) max = Math.max(max, likeness(look, other));
+    return max;
+  }
 }
