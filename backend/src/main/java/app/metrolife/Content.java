@@ -53,10 +53,7 @@ public class Content {
       int n = 0;
       for (JsonNode nh : city.withArray("neighborhoods")) {
         String id = city.path("id").asText();
-        ((ObjectNode) nh).put(
-          "rent",
-          n == 0 ? starterRent(id) : (id.equals("atl") ? 30 : id.equals("nyc") ? 45 : 50) + 10 * n
-        );
+        ((ObjectNode) nh).put("rent", rent(id, n));
         n++;
       }
       city
@@ -476,6 +473,22 @@ public class Content {
   static int starterRent(String city) {
     return city.equals("atl") ? 15 : city.equals("nyc") ? 22 : 25;
   }
+
+  /**
+   * Daily rent of a city's neighbourhoods, in content order: the first is the starter studio, then
+   * each step costs a share of one entry shift. The first upgrade leaves an entry-level worker who
+   * eats out twice about a third of a shift to save each day; the dearest ones wait for promotions.
+   */
+  static final double[] RENT_SHARE = { 0, .36, .42, .5, .6, .72 };
+
+  static int rent(String city, int index) {
+    if (index == 0) return starterRent(city);
+    double share = RENT_SHARE[Math.min(index, RENT_SHARE.length - 1)] + .1 * Math.max(0, index - RENT_SHARE.length + 1);
+    return (int) Math.round(entryPay(city) * share);
+  }
+
+  /** Cash a day of ordinary eating costs: two meals out (a home-cooked meal is free). */
+  static final int DAILY_FOOD = 24;
 
   static int entryPay(String city) {
     return city.equals("atl") ? 70 : city.equals("nyc") ? 100 : 110;

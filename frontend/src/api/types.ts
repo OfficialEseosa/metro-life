@@ -642,6 +642,34 @@ export type PlayerPatch = Pick<
 
 export type SocialKind = "wave" | "hangout" | "gift";
 
+/**
+ * One home in the player's home city as the server's daily budget sees it (`sim.economy.forecast.homes`):
+ * one healthy shift a day minus rent and two meals out.
+ */
+export type HomeBudget = {
+  city: CityId;
+  neighborhood: string;
+  name: string;
+  rent: number;
+  dailyNet: number;
+  /** leaves a real saving on one shift a day */
+  sustainable: boolean;
+  current: boolean;
+};
+
+/** The one move worth suggesting (`sim.economy.forecast.upgrade`); null when none is sustainable. */
+export type HomeUpgrade = {
+  city: CityId;
+  neighborhood: string;
+  name: string;
+  rent: number;
+  deposit: number;
+  dailyNet: number;
+  /** deposit plus a day of rent and meals (and any rent owed) */
+  cashNeeded: number;
+  ready: boolean;
+};
+
 /** One received social moment, kept in the receiver's `Sim.socialInbox` until it ages out. */
 export type SocialInboxEntry = {
   /** increases by one per received moment for this sim; the page shows each seq once */

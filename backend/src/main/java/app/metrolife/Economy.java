@@ -87,7 +87,7 @@ final class Economy {
     ObjectNode out = g.object();
     out.set("entries", s.path("ledger").deepCopy());
     double rent = s.path("home").path("rent").asDouble(),
-      food = 24,
+      food = Content.DAILY_FOOD,
       pay = 0;
     JsonNode job = s.path("job");
     if (job.isObject()) {
@@ -119,8 +119,62 @@ final class Economy {
       "payAssumption",
       job.isObject() ? "One healthy shift; actual pay depends on your job and mood" : "No job income assumed"
     );
+    homes(s, forecast, pay, food);
     ObjectNode rates = out.putObject("ratesPerGameHour");
     for (int i = 0; i < Content.NEEDS.length; i++) rates.put(Content.NEEDS[i], Content.NEED_RATES[i]);
     return out;
+  }
+
+  /** Saving left after rent and meals that makes a home sustainable on one shift a day. */
+  static double minimumSaving(double pay) {
+    return Math.max(10, Math.round(pay * .15));
+  }
+
+  /**
+   * What each home in the player's home city would leave per day on one healthy shift and two meals
+   * out, and the one upgrade worth suggesting: the cheapest home dearer than the current one that
+   * still leaves a real saving. No job, or no such home, means no suggestion.
+   */
+  void homes(ObjectNode s, ObjectNode forecast, double pay, double food) {
+    String city = s.path("home").path("city").asText(s.path("city").asText());
+    double current = s.path("home").path("rent").asDouble(),
+      saving = minimumSaving(pay);
+    boolean studio = s.path("home").path("kind").asText().equals("studio");
+    ArrayNode homes = forecast.putArray("homes");
+    ObjectNode upgrade = null;
+    for (JsonNode nh : g.content.city(city).path("neighborhoods")) {
+      double rent = nh.path("rent").asDouble(),
+        net = pay - rent - food;
+      boolean here = nh.path("id").asText().equals(s.path("home").path("neighborhood").asText()) && !studio,
+        sustainable = pay > 0 && net >= saving;
+      ObjectNode row = homes
+        .addObject()
+        .put("city", city)
+        .put("neighborhood", nh.path("id").asText())
+        .put("name", nh.path("name").asText())
+        .put("rent", rent)
+        .put("dailyNet", net)
+        .put("sustainable", sustainable)
+        .put("current", here);
+      if (!here && sustainable && rent > current && (upgrade == null || rent < upgrade.path("rent").asDouble())) upgrade =
+        row;
+    }
+    if (upgrade == null) {
+      forecast.putNull("upgrade");
+      return;
+    }
+    double deposit = upgrade.path("rent").asDouble(),
+      // The deposit plus one more day of rent and meals, so moving never leaves the player short.
+      needed = deposit + upgrade.path("rent").asDouble() + food + s.path("rentDebt").asDouble();
+    forecast
+      .putObject("upgrade")
+      .put("city", city)
+      .put("neighborhood", upgrade.path("neighborhood").asText())
+      .put("name", upgrade.path("name").asText())
+      .put("rent", upgrade.path("rent").asDouble())
+      .put("deposit", deposit)
+      .put("dailyNet", upgrade.path("dailyNet").asDouble())
+      .put("cashNeeded", needed)
+      .put("ready", s.path("cash").asDouble() >= needed);
   }
 }

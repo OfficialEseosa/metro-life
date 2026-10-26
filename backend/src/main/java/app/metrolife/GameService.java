@@ -901,6 +901,15 @@ public class GameService {
     updateLevel(s);
   }
 
+  /**
+   * Pay multiplier for the current mood. A rough day (a need near zero) costs 30%; a low one only
+   * 15%, so one bad stretch slows a worker down without tipping them into a spiral.
+   */
+  static double moodPay(ObjectNode s) {
+    String mood = s.path("mood").asText();
+    return mood.equals("rough") ? .7 : mood.equals("low") ? .85 : 1;
+  }
+
   void updateMood(ObjectNode s) {
     double min = 100,
       sum = 0;
@@ -1096,7 +1105,8 @@ public class GameService {
     boolean campaign = a.path("label").asText().equals("Campaign");
     if (campaign) civic.campaignCheck(w, s, city);
     boolean low = Set.of("rough", "low").contains(s.path("mood").asText());
-    double cashDelta = Math.floor(a.path("pay").asDouble() * (low ? .7 : 1)) - a.path("cost").asDouble();
+    double moodPay = moodPay(s);
+    double cashDelta = Math.floor(a.path("pay").asDouble() * moodPay) - a.path("cost").asDouble();
     s.put("cash", s.path("cash").asDouble() + cashDelta);
     int xp = a.path("xp").asInt();
     s.put("xp", s.path("xp").asInt() + xp);
@@ -1204,7 +1214,7 @@ public class GameService {
       .put("id", action)
       .put("label", a.path("label").asText())
       .put("cost", a.path("cost").asDouble())
-      .put("pay", Math.floor(a.path("pay").asDouble() * (low ? .7 : 1)))
+      .put("pay", Math.floor(a.path("pay").asDouble() * moodPay))
       .put("dailyCash", dailyCash)
       .put("bonusCash", s.path("cash").asDouble() - cashBefore - cashDelta - dailyCash);
     // Persist the accepted outcome; readers settle it exactly once at its deadline,
