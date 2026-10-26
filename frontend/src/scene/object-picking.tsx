@@ -292,15 +292,18 @@ export function ObjectPicking({
             layout.exit,
           );
         }
-        // The floor marker is selectable even when the front wall is cut away.
+        // The way out is selectable even when the front wall is cut away: the floor marker, the
+        // mat in the doorway and the threshold, not only the exact exit spot.
+        const doorFrom = layout.exit.z - 0.6,
+          doorTo = halfDepth + 0.3;
         addBox(
           "door",
           "exit",
           layout.exit.x,
-          layout.exit.z,
-          1.15,
-          0.7,
-          0.12,
+          (doorFrom + doorTo) / 2,
+          1.8,
+          doorTo - doorFrom,
+          0.14,
           0,
           0,
           "exit",
