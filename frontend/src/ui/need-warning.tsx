@@ -5,6 +5,23 @@ import { Icon } from "./primitives";
 import { NEED_ICONS, NEED_LABELS } from "./needs";
 import { sound } from "./sound";
 
+/** What helps each need, in the player's words. Each line stays under 60 characters with the pay note. */
+const ADVICE: Record<
+  string,
+  { text: string; action: string; to: "home" | "eat" | "fun" | "none" }
+> = {
+  energy: {
+    text: "Get some sleep in your bed.",
+    action: "Go home",
+    to: "home",
+  },
+  hunger: { text: "Grab something to eat.", action: "Find food", to: "eat" },
+  fun: { text: "Do something fun.", action: "Find fun", to: "fun" },
+  social: { text: "Talk to someone nearby.", action: "", to: "none" },
+  hygiene: { text: "Take a shower at home.", action: "Go home", to: "home" },
+};
+const PAY_NOTE = "Low needs reduce your pay.";
+
 /** A critical need, five seconds after it drops below 15. Dismissable; never stacks over other news. */
 export function NeedWarning() {
   const social = useStore((s) => !!s.socialNotice),
@@ -43,7 +60,11 @@ export function NeedWarning() {
     social
   )
     return null;
-  const home = critical === "energy" || critical === "social";
+  const advice = ADVICE[critical] ?? {
+    text: "Look after yourself.",
+    action: "",
+    to: "none" as const,
+  };
   return (
     <div className={`hud-toast need-warning ${critical}`} role="status">
       <span className={`semantic-tile ${critical}`}>
@@ -52,26 +73,26 @@ export function NeedWarning() {
       <div>
         <strong>{NEED_LABELS[critical] ?? critical} is very low</strong>
         <p>
-          {home ? "Recharge at home." : "Find a place that helps."} Low needs
-          reduce your pay.
+          {advice.text} {PAY_NOTE}
         </p>
-        <button
-          className="text-button"
-          onClick={() => {
-            setDismissed(critical);
-            if (home) {
-              useStore.getState().selectLocation("home");
-              useStore.getState().setFocus("home");
-            } else {
-              useStore
-                .getState()
-                .setMapLens(critical === "hunger" ? "eat" : "fun");
-              useStore.getState().setSearchOpen(true);
-            }
-          }}
-        >
-          {home ? "Go home" : "Find a place"}
-        </button>
+        {advice.action && (
+          <button
+            className="text-button"
+            onClick={() => {
+              setDismissed(critical);
+              const store = useStore.getState();
+              if (advice.to === "home") {
+                store.selectLocation("home");
+                store.setFocus("home");
+              } else {
+                store.setMapLens(advice.to === "eat" ? "eat" : "fun");
+                store.setSearchOpen(true);
+              }
+            }}
+          >
+            {advice.action}
+          </button>
+        )}
       </div>
       <button
         className="icon-button"
