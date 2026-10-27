@@ -73,7 +73,7 @@ export function NeedWarning() {
       <div>
         <strong>{NEED_LABELS[critical] ?? critical} is very low</strong>
         <p>
-          {advice.text} {PAY_NOTE}
+          {advice.text} <span className="need-pay">{PAY_NOTE}</span>
         </p>
         {advice.action && (
           <button

@@ -1171,6 +1171,14 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  /* notices stop short of the player in the middle of the screen */
+  .hud-toasts > * {
+    max-width: calc(50vw - 40px);
+  }
+  /* on a phone the advice is the message; the pay note shows on larger screens */
+  .need-warning .need-pay {
+    display: none;
+  }
   .hud-toasts > :nth-child(n + 3) {
     display: none;
   }
