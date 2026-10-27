@@ -590,6 +590,9 @@ final class Navigation {
     p.put("face", chosen.path("face").asDouble());
   }
 
+  /** How close to a room's exit a player may leave from: EXIT_REACH in frontend/src/navigation.ts plus a little slack for a trailing step. */
+  static final double EXIT_REACH = 2.25;
+
   ObjectNode door(String token, JsonNode body) {
     ObjectNode ses = g.session(token, true),
       s = g.sim(ses),
@@ -636,7 +639,7 @@ final class Navigation {
         Math.hypot(
           p.path("x").asDouble() - exit.path("x").asDouble(),
           p.path("z").asDouble() - exit.path("z").asDouble()
-        ) <= 1.5,
+        ) <= EXIT_REACH,
         409,
         "Walk to the exit first"
       );

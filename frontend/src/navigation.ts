@@ -135,11 +135,14 @@ export function stationActionFor(
 export function roomType(room: string | null | undefined) {
   return room?.split(":")[0] as keyof typeof interiors | undefined;
 }
+/** How close to a room's exit the player must stand to leave; mirrors Navigation.EXIT_REACH. */
+export const EXIT_REACH = 2.2;
 export function nearbyStation(p: Position, city: CityId = "atl") {
   const type = roomType(p.room);
   if (!type) return;
   const room = roomLayout(city, type);
-  if (Math.hypot(p.x - room.exit.x, p.z - room.exit.z) < 1.5)
+  // Near the door is enough (the server accepts a leave within EXIT_REACH of the exit).
+  if (Math.hypot(p.x - room.exit.x, p.z - room.exit.z) < EXIT_REACH)
     return {
       id: "exit",
       name: type === "home" ? "Leave home" : "Leave building",
