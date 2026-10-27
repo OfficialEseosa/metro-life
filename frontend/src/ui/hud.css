@@ -1175,6 +1175,14 @@
   .hud-toasts > * {
     max-width: calc(50vw - 40px);
   }
+  /* the reconnect banner keeps its message and its button on a short card */
+  .reconnect-banner > svg,
+  .reconnect-banner .reconnect-saved {
+    display: none;
+  }
+  .reconnect-banner .secondary svg {
+    display: none;
+  }
   /* on a phone the advice is the message; the pay note shows on larger screens */
   .need-warning .need-pay {
     display: none;

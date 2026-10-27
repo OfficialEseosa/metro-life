@@ -241,7 +241,8 @@ export function ReconnectBanner() {
     >
       <WifiSlash size={22} weight="bold" aria-hidden="true" />
       <span>
-        <strong>Connection lost.</strong> Reconnecting… Your life is saved.
+        <strong>Connection lost.</strong> Reconnecting…{" "}
+        <span className="reconnect-saved">Your life is saved.</span>
       </span>
       <button className="secondary" onClick={retryNow}>
         <ArrowClockwise size={18} weight="bold" aria-hidden="true" />
