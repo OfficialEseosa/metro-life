@@ -3,6 +3,13 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { shadowFocus } from "./world-lighting";
+import {
+  CULL_PRIORITY,
+  cameraChanged,
+  inView,
+  viewFrustum,
+} from "./instance-cull";
 
 export type TreeSpot = { x: number; y: number; z: number };
 const noPick = () => {};
@@ -16,9 +23,13 @@ const reduced =
  * normals point away from the crown centre, so light wraps it like a cloud.
  * `treeShade` carries bottom-to-top shading and `treeTrunk` marks the trunk.
  */
-function treeGeometry() {
+function treeGeometry(detail = 1) {
   const parts: THREE.BufferGeometry[] = [];
-  const mark = (g: THREE.BufferGeometry, trunk: number, crown?: THREE.Vector3) => {
+  const mark = (
+    g: THREE.BufferGeometry,
+    trunk: number,
+    crown?: THREE.Vector3,
+  ) => {
     const p = g.getAttribute("position"),
       n = g.getAttribute("normal"),
       shade = new Float32Array(p.count),
@@ -36,7 +47,7 @@ function treeGeometry() {
     g.deleteAttribute("uv");
     parts.push(g);
   };
-  const trunk = new THREE.CylinderGeometry(0.13, 0.2, 2.4, 7, 1);
+  const trunk = new THREE.CylinderGeometry(0.13, 0.2, 2.4, detail ? 7 : 5, 1);
   trunk.translate(0, 1.2, 0);
   mark(trunk.index ? trunk.toNonIndexed() : trunk, 1);
   const crownCentre = new THREE.Vector3(0, 3.55, 0),
@@ -49,7 +60,7 @@ function treeGeometry() {
     ];
   const crown: THREE.BufferGeometry[] = [];
   for (const [x, y, z, r] of clumps) {
-    const g = new THREE.IcosahedronGeometry(r, 1);
+    const g = new THREE.IcosahedronGeometry(r, detail);
     g.translate(x, y, z);
     // Polyhedra are already non-indexed.
     crown.push(g.index ? g.toNonIndexed() : g);
@@ -107,6 +118,8 @@ const hash = (x: number, z: number) => {
   return s - Math.floor(s);
 };
 const TILE = 64;
+/** Beyond this distance from the camera a tile of trees draws its low-detail crowns. */
+const LOD_DISTANCE = 70;
 
 /** Instanced trees, split into map tiles so camera and shadow frusta can skip far ones. */
 export function Trees({
@@ -116,14 +129,16 @@ export function Trees({
   spots: TreeSpot[];
   density?: number;
 }) {
-  const geometry = useMemo(treeGeometry, []),
-    material = useMemo(treeMaterial, []);
+  const geometry = useMemo(() => treeGeometry(1), []),
+    far = useMemo(() => treeGeometry(0), []),
+    material = useMemo(() => treeMaterial(), []);
   useEffect(
     () => () => {
       geometry.dispose();
+      far.dispose();
       material.dispose();
     },
-    [geometry, material],
+    [geometry, far, material],
   );
   const tiles = useMemo(() => {
     const groups = new Map<string, TreeSpot[]>();
@@ -143,7 +158,13 @@ export function Trees({
   return (
     <group name="fluffy-trees">
       {tiles.map((list, i) => (
-        <TreeTile key={i} spots={list} geometry={geometry} material={material} />
+        <TreeTile
+          key={i}
+          spots={list}
+          geometry={geometry}
+          far={far}
+          material={material}
+        />
       ))}
     </group>
   );
@@ -151,17 +172,26 @@ export function Trees({
 function TreeTile({
   spots,
   geometry,
+  far,
   material,
 }: {
   spots: TreeSpot[];
   geometry: THREE.BufferGeometry;
+  far: THREE.BufferGeometry;
   material: THREE.Material;
 }) {
-  const ref = useRef<THREE.InstancedMesh>(null);
+  const ref = useRef<THREE.InstancedMesh>(null),
+    // Each tree's transform and colour, kept so the tile can redraw just the trees in view.
+    trees = useRef<
+      { matrix: THREE.Matrix4; colour: THREE.Color; x: number; z: number }[]
+    >([]),
+    drawn = useRef({ count: spots.length, near: spots.length, version: -1 }),
+    lastCamera = useMemo(() => new THREE.Matrix4(), []);
   useLayoutEffect(() => {
     const mesh = ref.current!,
       d = new THREE.Object3D(),
       colour = new THREE.Color();
+    trees.current = [];
     spots.forEach((s, i) => {
       const h = hash(s.x, s.z),
         size = 0.78 + h * 0.5,
@@ -173,9 +203,24 @@ function TreeTile({
       mesh.setMatrixAt(i, d.matrix);
       const species =
         h > 0.92 ? 4 : Math.floor(hash(s.x * 1.7, s.z * 0.3) * 4) % 4;
-      colour.copy(tints[species]).multiplyScalar(0.94 + hash(s.z, s.x * 2) * 0.12);
+      colour
+        .copy(tints[species])
+        .multiplyScalar(0.94 + hash(s.z, s.x * 2) * 0.12);
       mesh.setColorAt(i, colour);
+      trees.current.push({
+        matrix: d.matrix.clone(),
+        colour: colour.clone(),
+        x: s.x,
+        z: s.z,
+      });
     });
+    drawn.current = { count: spots.length, near: spots.length, version: -1 };
+    mesh.onBeforeShadow = () => {
+      if (shadowFocus.follow) mesh.count = drawn.current.near;
+    };
+    mesh.onAfterShadow = () => {
+      mesh.count = drawn.current.count;
+    };
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     mesh.computeBoundingSphere();
@@ -183,6 +228,55 @@ function TreeTile({
     mesh.matrixAutoUpdate = false;
     mesh.userData.cameraOccluder = true;
   }, [spots]);
+  // At street level: trees in the shadow box first (only they cast), then the others in view,
+  // with low-detail crowns once the whole tile is far from the camera.
+  useFrame(({ camera, clock }) => {
+    const mesh = ref.current;
+    if (!mesh || !trees.current.length) return;
+    const moved = drawn.current.version !== shadowFocus.version;
+    drawn.current.version = shadowFocus.version;
+    if (!shadowFocus.follow) {
+      if (!moved) return;
+      trees.current.forEach((t, i) => {
+        mesh.setMatrixAt(i, t.matrix);
+        mesh.setColorAt(i, t.colour);
+      });
+      mesh.count =
+        drawn.current.count =
+        drawn.current.near =
+          trees.current.length;
+      mesh.geometry = geometry;
+    } else {
+      if (!cameraChanged(camera, lastCamera) && !moved) return;
+      const view = viewFrustum(camera, clock.elapsedTime),
+        reach = shadowFocus.radius + 3;
+      let n = 0,
+        nearCount = 0,
+        nearest = Infinity;
+      for (const pass of [0, 1])
+        for (const t of trees.current) {
+          const near =
+            Math.hypot(t.x - shadowFocus.x, t.z - shadowFocus.z) < reach;
+          if (pass === 0 ? !near : near) continue;
+          const y = t.matrix.elements[13];
+          if (pass === 1 && !inView(view, t.x, y + 3.3, t.z, 2.8)) continue;
+          mesh.setMatrixAt(n, t.matrix);
+          mesh.setColorAt(n, t.colour);
+          n++;
+          nearest = Math.min(
+            nearest,
+            Math.hypot(t.x - camera.position.x, t.z - camera.position.z),
+          );
+          if (pass === 0) nearCount = n;
+        }
+      drawn.current.near = nearCount;
+      mesh.count = drawn.current.count = n;
+      mesh.geometry = nearest > LOD_DISTANCE ? far : geometry;
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+  }, CULL_PRIORITY);
   return (
     <instancedMesh
       ref={ref}

@@ -101,7 +101,11 @@ function BookingPosters({
   }, [ads, texture, cols, rows]);
   // Unlit posters dim smoothly with the clock instead of switching at dusk.
   useFrame(() => {
-    resources.material.color.lerpColors(dayPaper, nightPoster, timeOfDay.nightFactor);
+    resources.material.color.lerpColors(
+      dayPaper,
+      nightPoster,
+      timeOfDay.nightFactor,
+    );
   });
   useEffect(() => {
     dirty.current = true;
@@ -174,7 +178,11 @@ function PlotField({ city }: { city: CityId }) {
     dragged = useRef(false),
     fieldMaterial = useRef<THREE.MeshBasicMaterial>(null);
   useFrame(() => {
-    fieldMaterial.current?.color.lerpColors(dayPaper, nightField, timeOfDay.nightFactor);
+    fieldMaterial.current?.color.lerpColors(
+      dayPaper,
+      nightField,
+      timeOfDay.nightFactor,
+    );
   });
   const texture = useMemo(() => new THREE.Texture(), []);
   useLayoutEffect(() => {
@@ -355,7 +363,11 @@ function PlotField({ city }: { city: CityId }) {
         }}
       >
         <planeGeometry args={[width, height]} />
-        <meshBasicMaterial ref={fieldMaterial} map={texture} toneMapped={false} />
+        <meshBasicMaterial
+          ref={fieldMaterial}
+          map={texture}
+          toneMapped={false}
+        />
       </mesh>
       {selection &&
         !plots?.ads.some(

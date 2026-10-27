@@ -292,15 +292,18 @@ export function ObjectPicking({
             layout.exit,
           );
         }
-        // The floor marker is selectable even when the front wall is cut away.
+        // The way out is selectable even when the front wall is cut away: the floor marker, the
+        // mat in the doorway and the threshold, not only the exact exit spot.
+        const doorFrom = layout.exit.z - 0.6,
+          doorTo = halfDepth + 0.3;
         addBox(
           "door",
           "exit",
           layout.exit.x,
-          layout.exit.z,
-          1.15,
-          0.7,
-          0.12,
+          (doorFrom + doorTo) / 2,
+          1.8,
+          doorTo - doorFrom,
+          0.14,
           0,
           0,
           "exit",
@@ -435,10 +438,17 @@ export function ObjectPicking({
             person.position &&
             (person.position.room ?? null) === room,
         ),
-        residents = scene.getObjectByName("residents");
-      if (residents instanceof THREE.InstancedMesh && visible(residents)) {
+        crowds = ["residents", "residents-far"].map((name) =>
+          scene.getObjectByName(name),
+        );
+      for (const residents of crowds) {
+        if (!(residents instanceof THREE.InstancedMesh) || !visible(residents))
+          continue;
         const ids = residents.userData.ids as string[] | undefined;
-        for (let i = 0; i < residents.count; i++) {
+        const pickable =
+          (residents.userData.pickCount as number | undefined) ??
+          residents.count;
+        for (let i = 0; i < pickable; i++) {
           const person = people.find((p) => p.id === ids?.[i]);
           if (!person) continue;
           residents.getMatrixAt(i, instance);
@@ -471,7 +481,8 @@ export function ObjectPicking({
             { x, z },
           );
         }
-      } else if (!residents) {
+      }
+      if (!crowds[0]) {
         for (const person of people) {
           const p = person.activitySlot ?? person.position!;
           addBox(
@@ -506,7 +517,8 @@ export function ObjectPicking({
         pinHits.sort((a, b) => a.distance - b.distance);
         const pin = pinHits[0],
           locationIds = pins.geometry.userData.locationIds as
-            string[] | undefined;
+            | string[]
+            | undefined;
         const sameDoor =
           pin &&
           picked?.target.kind === "door" &&

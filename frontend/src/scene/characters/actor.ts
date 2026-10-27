@@ -26,17 +26,8 @@ import {
   type Cut,
   type OutfitColours,
 } from "./outfits";
-import {
-  facialDonors,
-  facialGeometry,
-  hairDonors,
-  hairGeometry,
-} from "./hair";
-import {
-  acquireFaceTexture,
-  faceDecalGeometry,
-  faceMaterial,
-} from "./face";
+import { facialDonors, facialGeometry, hairDonors, hairGeometry } from "./hair";
+import { acquireFaceTexture, faceDecalGeometry, faceMaterial } from "./face";
 import {
   clothMaterial,
   hairMaterial,
@@ -150,7 +141,13 @@ function variantOf(look: Look) {
 }
 export function lookSeed(look: Look) {
   return hashString(
-    [look.body, look.skin, look.hair, look.hairColor, (look as WardrobeLook).face].join("|"),
+    [
+      look.body,
+      look.skin,
+      look.hair,
+      look.hairColor,
+      (look as WardrobeLook).face,
+    ].join("|"),
   );
 }
 
@@ -176,7 +173,10 @@ export function lookReady(look: Look, options: ActorOptions = {}) {
 }
 const pendingLooks = new Map<string, Promise<void>>();
 /** Load everything a look needs; resolves immediately when it is already cached. */
-export function loadLook(look: Look, options: ActorOptions = {}): Promise<void> {
+export function loadLook(
+  look: Look,
+  options: ActorOptions = {},
+): Promise<void> {
   const donors = donorsFor(look, options),
     key = donors.join(",") + sexOf(look);
   let pending = pendingLooks.get(key);
@@ -301,7 +301,10 @@ function glassesGeometry(head: DonorKit) {
     normals.push(...(p.getAttribute("normal").array as Float32Array));
     p.dispose();
   }
-  merged.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  merged.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
   merged.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
   const out = rigidPiece(merged, head.head.headBone);
   merged.dispose();
@@ -437,10 +440,16 @@ const shared = {
   blobGeometry: new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
   potGeometry: new THREE.CylinderGeometry(0.13, 0.11, 0.12, 18),
   soupGeometry: new THREE.CylinderGeometry(0.115, 0.115, 0.01, 18),
-  spoonGeometry: new THREE.CylinderGeometry(0.008, 0.008, 1, 6).translate(0, 0.5, 0),
+  spoonGeometry: new THREE.CylinderGeometry(0.008, 0.008, 1, 6).translate(
+    0,
+    0.5,
+    0,
+  ),
   phoneGeometry: new THREE.BoxGeometry(0.035, 0.075, 0.009),
   bookGeometry: new THREE.BoxGeometry(0.24, 0.025, 0.17),
-  guitarBody: new THREE.CylinderGeometry(0.17, 0.17, 0.07, 20).rotateX(Math.PI / 2),
+  guitarBody: new THREE.CylinderGeometry(0.17, 0.17, 0.07, 20).rotateX(
+    Math.PI / 2,
+  ),
   guitarNeck: new THREE.BoxGeometry(0.05, 0.42, 0.03),
   blanketGeometry: (() => {
     const g = new THREE.BoxGeometry(1, 1, 1, 4, 2, 6),
@@ -458,6 +467,8 @@ const shared = {
     return g;
   })(),
 };
+
+const hips = new THREE.Vector3();
 
 type PropName = "pot" | "spoon" | "phone" | "blanket" | "book" | "guitar";
 
@@ -657,7 +668,11 @@ export class CharacterActor {
       new THREE.Vector3(0, body.height * 0.5, 0),
       body.height * 0.8,
     );
-    const bind = (geometry: THREE.BufferGeometry, material: THREE.Material, name: string) => {
+    const bind = (
+      geometry: THREE.BufferGeometry,
+      material: THREE.Material,
+      name: string,
+    ) => {
       const mesh = new THREE.SkinnedMesh(geometry, material);
       mesh.name = name;
       mesh.bind(skeleton, new THREE.Matrix4());
@@ -669,9 +684,19 @@ export class CharacterActor {
       return mesh;
     };
     this.casters.push(
-      bind(skinGeometry(head, body, legs, feet), skinMaterial(look.skin), "character-skin"),
+      bind(
+        skinGeometry(head, body, legs, feet),
+        skinMaterial(look.skin),
+        "character-skin",
+      ),
     );
-    const cloth = clothGeometry(head, body, legs, feet, !!options.accessories?.glasses);
+    const cloth = clothGeometry(
+      head,
+      body,
+      legs,
+      feet,
+      !!options.accessories?.glasses,
+    );
     this.clothGeometry = new THREE.BufferGeometry();
     for (const name of [
       "position",
@@ -688,9 +713,19 @@ export class CharacterActor {
       3,
     );
     this.clothGeometry.setAttribute("color", this.clothColours);
-    this.casters.push(bind(this.clothGeometry, clothMaterial(), "character-cloth"));
-    const hair = hairWithFacial(look.hair, options.accessories?.facial, head, donors);
-    if (hair) this.casters.push(bind(hair, hairMaterial(look.hairColor), "character-hair"));
+    this.casters.push(
+      bind(this.clothGeometry, clothMaterial(), "character-cloth"),
+    );
+    const hair = hairWithFacial(
+      look.hair,
+      options.accessories?.facial,
+      head,
+      donors,
+    );
+    if (hair)
+      this.casters.push(
+        bind(hair, hairMaterial(look.hairColor), "character-hair"),
+      );
     // Painted face on the front of the head skin.
     const faceTexture = acquireFaceTexture(
         {
@@ -703,7 +738,11 @@ export class CharacterActor {
         options.faceSize ?? 256,
       ),
       material = faceMaterial(faceTexture.texture),
-      faceMesh = bind(faceDecalGeometry(head, headSkin(head)), material, "character-face");
+      faceMesh = bind(
+        faceDecalGeometry(head, headSkin(head)),
+        material,
+        "character-face",
+      );
     faceMesh.castShadow = false;
     faceMesh.renderOrder = 1;
     this.face = { material, release: faceTexture.release };
@@ -739,23 +778,36 @@ export class CharacterActor {
         this.overlayRest.push(b.quaternion.clone());
       }
     }
-    const feetBones = ["FootL", "FootR"].map((n) => byName.get(n)!).filter(Boolean),
+    const feetBones = ["FootL", "FootR"]
+        .map((n) => byName.get(n)!)
+        .filter(Boolean),
       clip = (name: string) => this.clip(name);
     this.root.updateMatrixWorld(true);
     const measure = (name: string) => {
       const c = clip(name);
       return c
-        ? strideSpeed(sex + body.name + name, c, skeletonRoot, this.scaled, feetBones) *
-            this.scale
+        ? strideSpeed(
+            sex + body.name + name,
+            c,
+            skeletonRoot,
+            this.scaled,
+            feetBones,
+          ) * this.scale
         : 1.4;
     };
     const p = options.personality;
     this.personality = {
-      idle: p ? (["Idle", "Idle", "IdleSubtle", "FoldArms", "Idle"][Math.floor(random() * 5)]) : "Idle",
-      idles: p
-        ? [["Idle", "IdleSubtle"], ["Idle", "IdleSubtle", "FoldArms"], ["IdleSubtle", "Idle"]][
-            Math.floor(random() * 3)
+      idle: p
+        ? ["Idle", "Idle", "IdleSubtle", "FoldArms", "Idle"][
+            Math.floor(random() * 5)
           ]
+        : "Idle",
+      idles: p
+        ? [
+            ["Idle", "IdleSubtle"],
+            ["Idle", "IdleSubtle", "FoldArms"],
+            ["IdleSubtle", "Idle"],
+          ][Math.floor(random() * 3)]
         : ["Idle", "IdleSubtle"],
       walk: p
         ? sex === "f"
@@ -791,7 +843,8 @@ export class CharacterActor {
     return kit?.animations.find((a) => a.name.split("|").at(-1) === name);
   }
   private bodyDonor(): Donor {
-    return partsFor(this.sex, cutOf(this.look.style), variantOf(this.look)).Body;
+    return partsFor(this.sex, cutOf(this.look.style), variantOf(this.look))
+      .Body;
   }
 
   private layer(name: string): Layer | undefined {
@@ -834,8 +887,15 @@ export class CharacterActor {
       wardrobe?.[
         LYING.has(pose) ? "sleep" : pose === "Type" ? "work" : "everyday"
       ];
-    const o = outfit ?? (LYING.has(pose) ? { ...this.look, top: this.pyjamas } : this.look);
-    return outfitColours(o.top, o.bottom, LYING.has(pose) ? this.look.skin : o.shoeColor, cut);
+    const o =
+      outfit ??
+      (LYING.has(pose) ? { ...this.look, top: this.pyjamas } : this.look);
+    return outfitColours(
+      o.top,
+      o.bottom,
+      LYING.has(pose) ? this.look.skin : o.shoeColor,
+      cut,
+    );
   }
   private applyOutfit(colours: OutfitColours) {
     const key = SLOTS.map((s) => colours[s]).join("");
@@ -897,9 +957,15 @@ export class CharacterActor {
         }
       }
       if (!seatedPose) this.seated = false;
-      if (this.mode === "enter" && (!seatedPose || this.time >= this.enterUntil))
+      if (
+        this.mode === "enter" &&
+        (!seatedPose || this.time >= this.enterUntil)
+      )
         this.mode = "act";
-      if (this.mode !== "enter" && (clipName !== this.activityClip || this.mode !== "act")) {
+      if (
+        this.mode !== "enter" &&
+        (clipName !== this.activityClip || this.mode !== "act")
+      ) {
         const layer = this.layer(clipName);
         if (layer) {
           layer.action.reset().play();
@@ -937,7 +1003,8 @@ export class CharacterActor {
       layer.weight += (layer.target - layer.weight) * rate;
       if (layer.target === 0 && layer.weight < 0.01) {
         layer.weight = 0;
-        if (layer.action.enabled && layer.action.isScheduled()) layer.action.stop();
+        if (layer.action.enabled && layer.action.isScheduled())
+          layer.action.stop();
         continue;
       }
       if (!layer.action.isScheduled()) {
@@ -963,7 +1030,10 @@ export class CharacterActor {
       clip: this.activityClip,
       layers: [...this.layers]
         .filter(([, l]) => l.weight > 0)
-        .map(([n, l]) => n + ":" + l.weight.toFixed(2) + "@" + l.action.time.toFixed(2)),
+        .map(
+          ([n, l]) =>
+            n + ":" + l.weight.toFixed(2) + "@" + l.action.time.toFixed(2),
+        ),
     };
     this.plantFeet(
       heading,
@@ -986,7 +1056,9 @@ export class CharacterActor {
       // Idle variety: every so often settle into another of this person's idles.
       if (this.time >= this.idleSwapAt) {
         this.idleSwapAt = this.time + 9 + this.random() * 10;
-        const pool = p.idles.filter((name) => name !== p.idle && this.clip(name));
+        const pool = p.idles.filter(
+          (name) => name !== p.idle && this.clip(name),
+        );
         if (pool.length) p.idle = pool[Math.floor(this.random() * pool.length)];
       }
       targets[p.idle] = 1;
@@ -1015,7 +1087,8 @@ export class CharacterActor {
     // Match cadence to ground speed so feet stay planted.
     const scale = (name: string, natural: number, lo: number, hi: number) => {
       const layer = this.layer(name);
-      if (layer) layer.action.timeScale = THREE.MathUtils.clamp(speed / natural, lo, hi);
+      if (layer)
+        layer.action.timeScale = THREE.MathUtils.clamp(speed / natural, lo, hi);
     };
     scale(p.walk, walk, 0.25, 1.45);
     scale("Jog", jog, 0.6, 1.5);
@@ -1052,7 +1125,15 @@ export class CharacterActor {
         // Right hand stirs the pot in small circles; left hand steadies the handle.
         this.bend("Abdomen", 0.06);
         this.bend("Neck", 0.3);
-        this.reach("R", POT.x - 0.02 + Math.cos(t * 4.5) * 0.045, POT.y + 0.16, POT.z - 0.03 + Math.sin(t * 4.5) * 0.045, -0.6, -1, -0.4);
+        this.reach(
+          "R",
+          POT.x - 0.02 + Math.cos(t * 4.5) * 0.045,
+          POT.y + 0.16,
+          POT.z - 0.03 + Math.sin(t * 4.5) * 0.045,
+          -0.6,
+          -1,
+          -0.4,
+        );
         this.reach("L", POT.x + 0.2, POT.y + 0.05, POT.z, 0.8, -1, -0.3);
         break;
       }
@@ -1068,7 +1149,15 @@ export class CharacterActor {
       case "Play":
         // A guitar-sized strum: left hand on the neck, right hand brushing the strings.
         this.reach("L", 0.3, 1.22, 0.22, 0.6, -1, -0.3);
-        this.reach("R", -0.05, 1.0 + Math.sin(t * 9) * 0.05, 0.2, -0.6, -1, -0.3);
+        this.reach(
+          "R",
+          -0.05,
+          1.0 + Math.sin(t * 9) * 0.05,
+          0.2,
+          -0.6,
+          -1,
+          -0.3,
+        );
         break;
       case "Browse":
       case "Listen":
@@ -1077,10 +1166,16 @@ export class CharacterActor {
       default:
         if (pose === "Idle") {
           // A slow weight shift from foot to foot, the head staying level.
-          const shift = Math.sin(t * 0.42 + this.personality.phase) * 0.6 + Math.sin(t * 0.17) * 0.4;
+          const shift =
+            Math.sin(t * 0.42 + this.personality.phase) * 0.6 +
+            Math.sin(t * 0.17) * 0.4;
           this.bend("Abdomen", 0, shift * 0.035);
           this.bend("Chest", 0, shift * 0.02);
-          this.bend("Neck", Math.sin(t * 0.55) * 0.025, Math.sin(t * 0.3) * 0.035 - shift * 0.04);
+          this.bend(
+            "Neck",
+            Math.sin(t * 0.55) * 0.025,
+            Math.sin(t * 0.3) * 0.035 - shift * 0.04,
+          );
         }
     }
     void input;
@@ -1115,10 +1210,20 @@ export class CharacterActor {
     const la = S.distanceTo(E),
       lb = E.distanceTo(H),
       dir = this.ikDir.subVectors(T, S),
-      d = THREE.MathUtils.clamp(dir.length(), Math.abs(la - lb) + 1e-3, la + lb - 1e-3);
+      d = THREE.MathUtils.clamp(
+        dir.length(),
+        Math.abs(la - lb) + 1e-3,
+        la + lb - 1e-3,
+      );
     dir.normalize();
-    const cosA = THREE.MathUtils.clamp((la * la + d * d - lb * lb) / (2 * la * d), -1, 1),
-      bend = pole.sub(this.ikTmp.copy(dir).multiplyScalar(pole.dot(dir))).normalize(),
+    const cosA = THREE.MathUtils.clamp(
+        (la * la + d * d - lb * lb) / (2 * la * d),
+        -1,
+        1,
+      ),
+      bend = pole
+        .sub(this.ikTmp.copy(dir).multiplyScalar(pole.dot(dir)))
+        .normalize(),
       elbow = this.ikTmp
         .copy(S)
         .addScaledVector(dir, la * cosA)
@@ -1126,7 +1231,12 @@ export class CharacterActor {
     const u = this.ikU,
       v = this.ikV,
       parent = this.ikQ;
-    const rotate = (bone: THREE.Bone, from: THREE.Vector3, to: THREE.Vector3, origin: THREE.Vector3) => {
+    const rotate = (
+      bone: THREE.Bone,
+      from: THREE.Vector3,
+      to: THREE.Vector3,
+      origin: THREE.Vector3,
+    ) => {
       const q = this.scratch.q2.setFromUnitVectors(
         u.subVectors(from, origin).normalize(),
         v.subVectors(to, origin).normalize(),
@@ -1154,9 +1264,17 @@ export class CharacterActor {
                 : "Lie"
         ],
       target = this.scratch.c.set(0, 0, 0);
-    if (input.hip !== undefined && meta && (SEATED_POSES.has(pose) || LYING.has(pose) || this.mode === "act")) {
+    if (
+      input.hip !== undefined &&
+      meta &&
+      (SEATED_POSES.has(pose) || LYING.has(pose) || this.mode === "act")
+    ) {
       const s = this.scale;
-      target.set(-meta.hip[0] * s, input.hip - meta.hip[1] * s, -meta.hip[2] * s);
+      target.set(
+        -meta.hip[0] * s,
+        input.hip - meta.hip[1] * s,
+        -meta.hip[2] * s,
+      );
     } else if (pose === "Cook" && this.mode === "act") target.z = COOK_STEP;
     this.anchor.position.lerp(
       target,
@@ -1165,7 +1283,8 @@ export class CharacterActor {
     // A wider, softer contact when seated or lying.
     const spread = LYING.has(pose) ? 2.1 : SEATED_POSES.has(pose) ? 1.5 : 1.05;
     this.blob.scale.x += (spread - this.blob.scale.x) * 0.2;
-    this.blob.scale.z += ((LYING.has(pose) ? 1.6 : spread) - this.blob.scale.z) * 0.2;
+    this.blob.scale.z +=
+      ((LYING.has(pose) ? 1.6 : spread) - this.blob.scale.z) * 0.2;
   }
 
   private prop(name: PropName) {
@@ -1173,35 +1292,59 @@ export class CharacterActor {
     if (!object) {
       if (name === "pot") {
         const pot = new THREE.Group(),
-          body = new THREE.Mesh(shared.potGeometry, propMaterial("#3a4248", 0.4, 0.4)),
-          soup = new THREE.Mesh(shared.soupGeometry, propMaterial("#d9a441", 0.5));
+          body = new THREE.Mesh(
+            shared.potGeometry,
+            propMaterial("#3a4248", 0.4, 0.4),
+          ),
+          soup = new THREE.Mesh(
+            shared.soupGeometry,
+            propMaterial("#d9a441", 0.5),
+          );
         soup.position.y = 0.05;
         pot.add(body, soup);
         object = pot;
       } else if (name === "spoon")
-        object = new THREE.Mesh(shared.spoonGeometry, propMaterial("#8a6a48", 0.7));
+        object = new THREE.Mesh(
+          shared.spoonGeometry,
+          propMaterial("#8a6a48", 0.7),
+        );
       else if (name === "phone")
-        object = new THREE.Mesh(shared.phoneGeometry, propMaterial("#22262b", 0.3, 0.2));
+        object = new THREE.Mesh(
+          shared.phoneGeometry,
+          propMaterial("#22262b", 0.3, 0.2),
+        );
       else if (name === "book")
-        object = new THREE.Mesh(shared.bookGeometry, propMaterial("#b8503f", 0.7));
+        object = new THREE.Mesh(
+          shared.bookGeometry,
+          propMaterial("#b8503f", 0.7),
+        );
       else if (name === "guitar") {
         const guitar = new THREE.Group(),
-          body = new THREE.Mesh(shared.guitarBody, propMaterial("#c98a4b", 0.5)),
-          neck = new THREE.Mesh(shared.guitarNeck, propMaterial("#5a3b26", 0.6));
+          body = new THREE.Mesh(
+            shared.guitarBody,
+            propMaterial("#c98a4b", 0.5),
+          ),
+          neck = new THREE.Mesh(
+            shared.guitarNeck,
+            propMaterial("#5a3b26", 0.6),
+          );
         body.scale.set(1, 1.15, 1);
         neck.position.set(0, 0.36, 0);
         guitar.add(body, neck);
         object = guitar;
-      }
-      else {
+      } else {
         const colour = PASTELS[Math.floor(this.random() * PASTELS.length)];
-        object = new THREE.Mesh(shared.blanketGeometry, propMaterial(colour, 0.9));
+        object = new THREE.Mesh(
+          shared.blanketGeometry,
+          propMaterial(colour, 0.9),
+        );
         object.castShadow = true;
         object.receiveShadow = true;
       }
       object.name = "character-" + name;
       object.raycast = () => {};
-      if (!this.castsShadow && object instanceof THREE.Mesh) object.castShadow = false;
+      if (!this.castsShadow && object instanceof THREE.Mesh)
+        object.castShadow = false;
       this.root.add(object);
       this.props[name] = object;
     }
@@ -1244,7 +1387,10 @@ export class CharacterActor {
       c.subVectors(a, b);
       spoon.position.copy(b);
       spoon.scale.set(1, c.length() + 0.04, 1);
-      spoon.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), c.normalize());
+      spoon.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        c.normalize(),
+      );
     }
     if (reading) {
       const book = this.prop("book");
@@ -1275,8 +1421,13 @@ export class CharacterActor {
       b.add(c).multiplyScalar(0.5);
       const length = a.distanceTo(b) + 0.4,
         mid = c.addVectors(a, b).multiplyScalar(0.5);
-      blanket.position.set(mid.x, Math.max(a.y + 0.05, feetTop), mid.z);
-      blanket.scale.set(0.78, 0.24, length);
+      // The hip lies about 0.12 m above whatever the body rests on: drape from there, so the
+      // duvet's hem meets the mattress instead of hovering over it.
+      local("Hips", hips);
+      const rest = hips.y - 0.12,
+        top = Math.max(a.y + 0.14, feetTop);
+      blanket.position.set(mid.x, (rest + top) / 2, mid.z);
+      blanket.scale.set(0.92, Math.max(0.12, top - rest), length);
       blanket.rotation.set(0, Math.atan2(a.x - b.x, a.z - b.z), 0);
     }
   }
@@ -1311,7 +1462,8 @@ export class CharacterActor {
   openEyes() {
     this.nextBlink = this.time + 10;
     this.blinkUntil = 0;
-    if (this.face) (this.face.material.userData.blink as { value: number }).value = 0;
+    if (this.face)
+      (this.face.material.userData.blink as { value: number }).value = 0;
   }
 
   /**
@@ -1337,8 +1489,16 @@ export class CharacterActor {
     const parent = bone.parent.getWorldQuaternion(this.scratch.q3),
       body = this.root.getWorldQuaternion(this.scratch.q4),
       axis = this.scratch.b;
-    const delta = this.scratch.q2.setFromAxisAngle(axis.set(0, 1, 0).applyQuaternion(body), yaw);
-    delta.multiply(this.scratch.q.setFromAxisAngle(axis.set(1, 0, 0).applyQuaternion(body), pitch));
+    const delta = this.scratch.q2.setFromAxisAngle(
+      axis.set(0, 1, 0).applyQuaternion(body),
+      yaw,
+    );
+    delta.multiply(
+      this.scratch.q.setFromAxisAngle(
+        axis.set(1, 0, 0).applyQuaternion(body),
+        pitch,
+      ),
+    );
     // local' = parent^-1 * delta * parent * local
     delta.premultiply(this.scratch.q.copy(parent).invert()).multiply(parent);
     bone.quaternion.premultiply(delta);
@@ -1357,7 +1517,10 @@ export class CharacterActor {
       return;
     }
     if (Number.isNaN(this.footYaw)) this.footYaw = heading;
-    let lag = Math.atan2(Math.sin(this.footYaw - heading), Math.cos(this.footYaw - heading));
+    let lag = Math.atan2(
+      Math.sin(this.footYaw - heading),
+      Math.cos(this.footYaw - heading),
+    );
     const wantsStep =
       Math.abs(lag) > 0.55 || (Math.abs(lag) > 0.3 && this.turnRate < 0.2);
     if (this.time >= this.stepUntil) {
@@ -1375,7 +1538,11 @@ export class CharacterActor {
       }
     }
     if (this.time < this.stepUntil) {
-      const progress = THREE.MathUtils.clamp((this.time - this.stepStart) / 0.4, 0, 1),
+      const progress = THREE.MathUtils.clamp(
+          (this.time - this.stepStart) / 0.4,
+          0,
+          1,
+        ),
         smooth = progress * progress * (3 - 2 * progress),
         flex = Math.sin(Math.PI * progress);
       lag = this.stepFrom * (1 - smooth);
@@ -1392,8 +1559,20 @@ export class CharacterActor {
   }
 
   /** Eases the head toward a nearby person, within what a neck can comfortably turn. */
-  private lookToward(at: THREE.Vector3 | undefined, pose: CharacterPose, moving: boolean, dt: number) {
-    const free = !LYING.has(pose) && (moving || pose === "Idle" || pose === "Talk" || pose === "Wave" || pose === "Listen" || SEATED_POSES.has(pose));
+  private lookToward(
+    at: THREE.Vector3 | undefined,
+    pose: CharacterPose,
+    moving: boolean,
+    dt: number,
+  ) {
+    const free =
+      !LYING.has(pose) &&
+      (moving ||
+        pose === "Idle" ||
+        pose === "Talk" ||
+        pose === "Wave" ||
+        pose === "Listen" ||
+        SEATED_POSES.has(pose));
     let yaw = 0,
       pitch = 0,
       want = 0;

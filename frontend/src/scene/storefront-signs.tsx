@@ -19,17 +19,11 @@ const fasciaGeometry = (() => {
       -1.8375,
       0,
     ),
-    new THREE.CylinderGeometry(0.08, 0.08, 2.625, 8).translate(
-      2.6,
-      -1.8375,
-      0,
-    ),
+    new THREE.CylinderGeometry(0.08, 0.08, 2.625, 8).translate(2.6, -1.8375, 0),
   ];
   for (const [index, geometry] of parts.entries()) {
     const color = new THREE.Color(index ? "#2c3f3b" : "#315f57"),
-      values = new Float32Array(
-        geometry.getAttribute("position").count * 3,
-      );
+      values = new Float32Array(geometry.getAttribute("position").count * 3);
     for (let i = 0; i < values.length; i += 3) {
       values[i] = color.r;
       values[i + 1] = color.g;

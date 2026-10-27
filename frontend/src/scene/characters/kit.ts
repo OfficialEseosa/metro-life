@@ -108,7 +108,9 @@ function restPiece(mesh: THREE.SkinnedMesh, world: THREE.Matrix4) {
     v = new THREE.Vector3(),
     normalMatrix = new THREE.Matrix3().getNormalMatrix(world);
   for (let i = 0; i < count; i++) {
-    v.fromBufferAttribute(p, i).applyMatrix4(world).toArray(position, i * 3);
+    v.fromBufferAttribute(p, i)
+      .applyMatrix4(world)
+      .toArray(position, i * 3);
     if (n)
       v.fromBufferAttribute(n, i)
         .applyMatrix3(normalMatrix)
@@ -121,17 +123,13 @@ function restPiece(mesh: THREE.SkinnedMesh, world: THREE.Matrix4) {
       skinWeight[i * 4 + c] = w;
       total += w;
     }
-    if (total > 0)
-      for (let c = 0; c < 4; c++) skinWeight[i * 4 + c] /= total;
+    if (total > 0) for (let c = 0; c < 4; c++) skinWeight[i * 4 + c] /= total;
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(position, 3));
   geometry.setAttribute("normal", new THREE.BufferAttribute(normal, 3));
   geometry.setAttribute("skinIndex", new THREE.BufferAttribute(skinIndex, 4));
-  geometry.setAttribute(
-    "skinWeight",
-    new THREE.BufferAttribute(skinWeight, 4),
-  );
+  geometry.setAttribute("skinWeight", new THREE.BufferAttribute(skinWeight, 4));
   const index = source.index;
   if (index) {
     const indices = new Uint32Array(index.count);
@@ -170,7 +168,8 @@ function boundsOf(geometries: THREE.BufferGeometry[]) {
     v = new THREE.Vector3();
   for (const g of geometries) {
     const p = g.getAttribute("position");
-    for (let i = 0; i < p.count; i++) box.expandByPoint(v.fromBufferAttribute(p, i));
+    for (let i = 0; i < p.count; i++)
+      box.expandByPoint(v.fromBufferAttribute(p, i));
   }
   return box;
 }
@@ -179,8 +178,7 @@ function buildDonor(name: Donor, gltf: GLTF): DonorKit {
   const scene = gltf.scene;
   scene.updateMatrixWorld(true);
   const pieces: Piece[] = [];
-  let skeleton: THREE.Skeleton | undefined,
-    world: THREE.Matrix4 | undefined;
+  let skeleton: THREE.Skeleton | undefined, world: THREE.Matrix4 | undefined;
   // A skin's inverse bind matrix is only meaningful for joints that skin actually uses, so
   // each joint takes its bind from a primitive that it really deforms.
   const binds: (THREE.Matrix4 | undefined)[] = [];
@@ -222,12 +220,15 @@ function buildDonor(name: Donor, gltf: GLTF): DonorKit {
     boneNames = skeleton.bones.map((b) => b.name),
     template = cloneBones(scene)!,
     bodyBox = boundsOf(pieces.map((p) => p.geometry)),
-    headSkin = pieces.filter((p) => p.part === "Head" && /^Skin/.test(p.material)),
+    headSkin = pieces.filter(
+      (p) => p.part === "Head" && /^Skin/.test(p.material),
+    ),
     bounds = boundsOf(headSkin.map((p) => p.geometry)),
     eyes = pieces.find(
       (p) =>
         p.part === "Head" &&
-        (p.material === "Eye" || (name.startsWith("f_") && p.material === "Brown")),
+        (p.material === "Eye" ||
+          (name.startsWith("f_") && p.material === "Brown")),
     ),
     brows = pieces.find(
       (p) =>
@@ -256,7 +257,11 @@ function buildDonor(name: Donor, gltf: GLTF): DonorKit {
     eyeRight.divideScalar(Math.max(1, r));
   } else {
     const size = bounds.getSize(new THREE.Vector3());
-    eyeLeft.set(centre.x + size.x * 0.17, centre.y + size.y * 0.05, bounds.max.z);
+    eyeLeft.set(
+      centre.x + size.x * 0.17,
+      centre.y + size.y * 0.05,
+      bounds.max.z,
+    );
     eyeRight.set(centre.x - size.x * 0.17, eyeLeft.y, eyeLeft.z);
   }
   const browY = brows
@@ -353,9 +358,11 @@ export function mergePieces(
     normal = new Float32Array(vertices * 3),
     skinIndex = new Uint16Array(vertices * 4),
     skinWeight = new Float32Array(vertices * 4),
-    clothBand = parts.length && parts.every(({ geometry }) => geometry.getAttribute("clothBand"))
-      ? new Float32Array(vertices * 2)
-      : undefined,
+    clothBand =
+      parts.length &&
+      parts.every(({ geometry }) => geometry.getAttribute("clothBand"))
+        ? new Float32Array(vertices * 2)
+        : undefined,
     tag = new Float32Array(vertices),
     index = new Uint32Array(indices);
   let v = 0,
@@ -394,9 +401,14 @@ export function rigidPiece(
   geometry: THREE.BufferGeometry,
   bone: number,
 ): THREE.BufferGeometry {
-  const g = geometry.index ? geometry : geometry.setIndex(
-    Array.from({ length: geometry.getAttribute("position").count }, (_, i) => i),
-  );
+  const g = geometry.index
+    ? geometry
+    : geometry.setIndex(
+        Array.from(
+          { length: geometry.getAttribute("position").count },
+          (_, i) => i,
+        ),
+      );
   const count = g.getAttribute("position").count,
     skinIndex = new Uint16Array(count * 4),
     skinWeight = new Float32Array(count * 4);

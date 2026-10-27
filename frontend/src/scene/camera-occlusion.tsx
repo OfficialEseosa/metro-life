@@ -258,7 +258,10 @@ export function CameraOcclusion() {
         if (!worldBox.containsPoint(end)) {
           const inside = worldBox.containsPoint(origin) ? origin : boxHit;
           back.set(end, reverse.copy(direction).negate());
-          if (back.intersectBox(worldBox, exit) && inside.distanceTo(exit) > 3) {
+          if (
+            back.intersectBox(worldBox, exit) &&
+            inside.distanceTo(exit) > 3
+          ) {
             entry.surface.value = 1;
             confirmed++;
             continue;
@@ -325,7 +328,8 @@ export function CameraOcclusion() {
     // Look the player group up only when the cached one has left the scene.
     let player = playerRef.current;
     if (!player || !player.parent) {
-      player = playerRef.current = scene.getObjectByName("controlled-player") ?? null;
+      player = playerRef.current =
+        scene.getObjectByName("controlled-player") ?? null;
     }
     const state = useStore.getState(),
       p = motion.position,

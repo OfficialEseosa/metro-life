@@ -6,7 +6,16 @@ import { Builder } from "./geometry";
 import { lightUniforms, timeOfDay } from "../lighting";
 
 const noPick = () => {};
-const towns = ["#b9735a", "#d8c3a0", "#9d5f4c", "#c9b7a4", "#8e8a86", "#d9a679", "#a7b2b5", "#c58f6d"],
+const towns = [
+    "#b9735a",
+    "#d8c3a0",
+    "#9d5f4c",
+    "#c9b7a4",
+    "#8e8a86",
+    "#d9a679",
+    "#a7b2b5",
+    "#c58f6d",
+  ],
   houses = ["#e8dcc4", "#c9d6d2", "#e5c7a8", "#d4c0dc", "#cfd9b8", "#f0e3cf"],
   awnings = ["#2f6b5e", "#8c3b33", "#2d4f7c", "#c58b2b", "#4f3d63"];
 
@@ -56,10 +65,21 @@ export function RoomStreet({
         along = (offset: number) =>
           axis === "x" ? [cx + offset, cz] : [cx, cz + offset],
         // Front face sits on the side nearer the room; the block extends away from it.
-        back = axis === "x" ? [0, -normal * depth / 2] : [-normal * depth / 2, 0],
+        back =
+          axis === "x"
+            ? [0, (-normal * depth) / 2]
+            : [(-normal * depth) / 2, 0],
         bw = axis === "x" ? span : depth,
         bd = axis === "x" ? depth : span;
-      walls.box(cx + back[0], height / 2 - 0.55, cz + back[1], bw, height, bd, colour);
+      walls.box(
+        cx + back[0],
+        height / 2 - 0.55,
+        cz + back[1],
+        bw,
+        height,
+        bd,
+        colour,
+      );
       walls.box(
         cx + back[0],
         height - 0.4,
@@ -70,7 +90,15 @@ export function RoomStreet({
         "#6b6460",
       );
       if (home) {
-        walls.box(cx + back[0], height + 0.15, cz + back[1], bw * 0.92, 0.6, bd * 0.92, "#7d5a4b");
+        walls.box(
+          cx + back[0],
+          height + 0.15,
+          cz + back[1],
+          bw * 0.92,
+          0.6,
+          bd * 0.92,
+          "#7d5a4b",
+        );
       } else {
         const awning = awnings[Math.floor(r3 * awnings.length)],
           front = axis === "x" ? [0, normal * 0.6] : [normal * 0.6, 0];
@@ -109,7 +137,15 @@ export function RoomStreet({
         const [px, pz] = along(0),
           fx = axis === "x" ? px : px + normal * face,
           fz = axis === "x" ? pz + normal * face : pz;
-        panes.box(fx, 1.1, fz, axis === "x" ? span * 0.7 : 0.08, 2.0, axis === "x" ? 0.08 : span * 0.7, "#55707a");
+        panes.box(
+          fx,
+          1.1,
+          fz,
+          axis === "x" ? span * 0.7 : 0.08,
+          2.0,
+          axis === "x" ? 0.08 : span * 0.7,
+          "#55707a",
+        );
       }
     };
     const row = (
@@ -121,9 +157,14 @@ export function RoomStreet({
     ) => {
       let at = from;
       while (at < to - 3) {
-        const span = Math.min(to - at, (home ? 7 : 6) + hash(seed++) * (home ? 4 : 7));
-        if (axis === "x") facade(at + span / 2, fixed, span - (home ? 2.5 : 0.15), "x", normal);
-        else facade(fixed, at + span / 2, span - (home ? 2.5 : 0.15), "z", normal);
+        const span = Math.min(
+          to - at,
+          (home ? 7 : 6) + hash(seed++) * (home ? 4 : 7),
+        );
+        if (axis === "x")
+          facade(at + span / 2, fixed, span - (home ? 2.5 : 0.15), "x", normal);
+        else
+          facade(fixed, at + span / 2, span - (home ? 2.5 : 0.15), "z", normal);
         at += span;
       }
     };
@@ -135,8 +176,24 @@ export function RoomStreet({
     // Pavement under the facades and the road on the camera side.
     const kerb = home ? "#a9a596" : "#aaa398";
     walls.box(0, -0.53, backZ + 1.5, w + reach * 2, 0.06, 6, kerb);
-    walls.box(-sideX - 1.5, -0.53, (backZ + d / 2) / 2, 6, 0.06, d / 2 - backZ, kerb);
-    walls.box(sideX + 1.5, -0.53, (backZ + d / 2) / 2, 6, 0.06, d / 2 - backZ, kerb);
+    walls.box(
+      -sideX - 1.5,
+      -0.53,
+      (backZ + d / 2) / 2,
+      6,
+      0.06,
+      d / 2 - backZ,
+      kerb,
+    );
+    walls.box(
+      sideX + 1.5,
+      -0.53,
+      (backZ + d / 2) / 2,
+      6,
+      0.06,
+      d / 2 - backZ,
+      kerb,
+    );
     const roadZ = d / 2 + 6.5;
     walls.box(0, -0.535, roadZ, w + reach * 2 + 12, 0.05, 7, "#4c4f55");
     for (let x = -(w / 2 + reach); x < w / 2 + reach; x += 4)
@@ -153,7 +210,10 @@ export function RoomStreet({
   );
   const materials = useMemo(
     () => ({
-      body: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 }),
+      body: new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.92,
+      }),
       glass: new THREE.MeshStandardMaterial({
         vertexColors: true,
         roughness: 0.25,
@@ -173,12 +233,19 @@ export function RoomStreet({
   );
   useFrame(() => {
     // Outside goes blue and dim after dark while the room keeps its own lamps.
-    materials.body.color.setRGB(1, 1, 1).lerp(dusk, timeOfDay.nightFactor * 0.75);
+    materials.body.color
+      .setRGB(1, 1, 1)
+      .lerp(dusk, timeOfDay.nightFactor * 0.75);
     materials.glass.emissiveIntensity = 0.05 + lightUniforms.lights.value * 0.9;
   });
   return (
     <group name="room-street">
-      <mesh geometry={body} material={materials.body} receiveShadow raycast={noPick} />
+      <mesh
+        geometry={body}
+        material={materials.body}
+        receiveShadow
+        raycast={noPick}
+      />
       <mesh geometry={glass} material={materials.glass} raycast={noPick} />
     </group>
   );

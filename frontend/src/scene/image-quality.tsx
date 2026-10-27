@@ -114,7 +114,9 @@ export function ImageQuality({
       halfResolutionAO: !!ao && halfRes,
       passes: [
         "beauty",
-        ...(ao ? [halfRes ? "N8AO half resolution" : "N8AO full resolution"] : []),
+        ...(ao
+          ? [halfRes ? "N8AO half resolution" : "N8AO full resolution"]
+          : []),
         "SMAA",
         "graded bloom",
         "Neutral output",

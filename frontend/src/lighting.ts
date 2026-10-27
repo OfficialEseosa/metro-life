@@ -242,12 +242,7 @@ export function gameMinutes() {
   return ((minutes % 1440) + 1440) % 1440;
 }
 
-function lerpHex(
-  target: THREE.Color,
-  from: string,
-  to: string,
-  t: number,
-) {
+function lerpHex(target: THREE.Color, from: string, to: string, t: number) {
   // Lerp in linear space so warm and cool keys mix without muddy greys.
   a.set(from);
   b.set(to);

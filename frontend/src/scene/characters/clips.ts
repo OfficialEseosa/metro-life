@@ -65,7 +65,13 @@ function parse(buffer: ArrayBuffer, rate?: number): ActivityLibrary {
       if (t.kind === "q")
         for (let f = 0; f < c.frames; f++) {
           const o = f * 4,
-            len = Math.hypot(values[o], values[o + 1], values[o + 2], values[o + 3]) || 1;
+            len =
+              Math.hypot(
+                values[o],
+                values[o + 1],
+                values[o + 2],
+                values[o + 3],
+              ) || 1;
           for (let k = 0; k < 4; k++) values[o + k] /= len;
         }
       tracks.push(

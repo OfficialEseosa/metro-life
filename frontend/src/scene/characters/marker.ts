@@ -90,7 +90,8 @@ export class SelectionMarker {
     this.group.visible = visible;
     const pulse = 1 + Math.sin(time * ((Math.PI * 2) / 1.6)) * 0.03;
     this.ring.scale.set(pulse, 1, pulse);
-    this.chevron.position.y = headY + 0.42 + Math.sin(time * Math.PI * 1.6) * 0.06;
+    this.chevron.position.y =
+      headY + 0.42 + Math.sin(time * Math.PI * 1.6) * 0.06;
   }
   dispose() {
     this.ring.geometry.dispose();

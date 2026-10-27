@@ -32,11 +32,14 @@ const matrix = new THREE.Matrix4(),
   scale = new THREE.Vector3(),
   white = new THREE.Color("#ffffff");
 
-function toFloat(attribute: THREE.BufferAttribute | THREE.InterleavedBufferAttribute) {
+function toFloat(
+  attribute: THREE.BufferAttribute | THREE.InterleavedBufferAttribute,
+) {
   const size = attribute.itemSize,
     values = new Float32Array(attribute.count * size);
   for (let i = 0; i < attribute.count; i++)
-    for (let k = 0; k < size; k++) values[i * size + k] = attribute.getComponent(i, k);
+    for (let k = 0; k < size; k++)
+      values[i * size + k] = attribute.getComponent(i, k);
   return new THREE.BufferAttribute(values, size);
 }
 
@@ -63,10 +66,13 @@ function bake(
     const tint = prop.tint ? new THREE.Color(prop.tint) : white;
     node.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return;
-      const material = (Array.isArray(o.material) ? o.material[0] : o.material) as THREE.MeshStandardMaterial;
+      const material = (
+        Array.isArray(o.material) ? o.material[0] : o.material
+      ) as THREE.MeshStandardMaterial;
       const g = o.geometry.clone();
       for (const name of Object.keys(g.attributes))
-        if (!["position", "normal", "uv"].includes(name)) g.deleteAttribute(name);
+        if (!["position", "normal", "uv"].includes(name))
+          g.deleteAttribute(name);
         // Packed models store quantised, normalised integers; transforming those in
         // place would clamp every vertex back into the unit box. Work in floats.
         else g.setAttribute(name, toFloat(g.getAttribute(name)));
@@ -126,6 +132,8 @@ export function PropBatch({
   /** Draw every batch with this material (Buy mode ghost). */
   override?: THREE.Material;
 }) {
+  // Ask for both packs before either suspends, so they load side by side, not one after the other.
+  preloadProps();
   const furniture = useGLTF(FURNITURE_PACK).scene,
     restaurant = useGLTF(RESTAURANT_PACK).scene;
   const batches = useMemo(

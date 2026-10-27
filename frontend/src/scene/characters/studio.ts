@@ -79,10 +79,13 @@ class CharacterStudio {
     if (portrait && lookReady(portrait.look)) {
       this.portraits.shift();
       portrait.resolve(this.drawPortrait(renderer, portrait.look));
-    } else if (portrait) void loadLook(portrait.look).then(() => this.schedule());
+    } else if (portrait)
+      void loadLook(portrait.look).then(() => this.schedule());
     // Turning previews at up to 30 frames a second.
     if (now - this.drawnAt > 30) {
-      const step = this.drawnAt ? Math.min((now - this.drawnAt) / 1000, 0.1) : dt;
+      const step = this.drawnAt
+        ? Math.min((now - this.drawnAt) / 1000, 0.1)
+        : dt;
       this.drawnAt = now;
       for (const view of this.views) this.drawView(renderer, view, step);
     }
@@ -145,7 +148,8 @@ class CharacterStudio {
   private drawPortrait(renderer: THREE.WebGLRenderer, look: Look) {
     const actor = new CharacterActor(look, { faceSize: 512 });
     // Settle into a relaxed idle before the picture.
-    for (let i = 0; i < 6; i++) actor.update(0.1, { pose: "Idle", speed: 0, now: Date.now() });
+    for (let i = 0; i < 6; i++)
+      actor.update(0.1, { pose: "Idle", speed: 0, now: Date.now() });
     actor.openEyes();
     this.place(actor);
     const size = 192;

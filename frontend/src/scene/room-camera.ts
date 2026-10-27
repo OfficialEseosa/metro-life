@@ -19,7 +19,7 @@ export function roomView(
     height = layout?.height ?? 3.6,
     focus = (
       layout as
-        (RoomLayout & { cameraFocus?: { x: number; y: number; z: number } })
+        | (RoomLayout & { cameraFocus?: { x: number; y: number; z: number } })
         | undefined
     )?.cameraFocus,
     yaw = 0.45,
