@@ -341,7 +341,13 @@ export function Residents() {
     nearSet = useRef(new Set<string>()),
     ready = useRef(new Set<string>()),
     states = useRef(new Map<string, ResidentMotion>()),
-    lodAt = useRef(0);
+    lodAt = useRef(0),
+    // Per-person instance colours and phase, copied to whichever slot the person is drawn in.
+    statics = useRef<{ phase: number; colours: THREE.Color[] }[]>([]),
+    drawOrder = useRef(""),
+    riggedScratch = useRef<
+      { i: number; state: number; matrix: THREE.Matrix4 }[]
+    >([]);
   const model = useMemo(() => {
     const geometry = crowdFigure();
     const states = new THREE.InstancedBufferAttribute(new Float32Array(48), 1),
@@ -480,10 +486,20 @@ export function Residents() {
           64 * (nearSet.current.has(p.id) && ready.current.has(p.id) ? 1 : 0) +
           128 * p.hairKind,
       );
-      model.phases.setX(
-        i,
-        [...p.id].reduce((a, c) => a + c.charCodeAt(0), 0),
-      );
+      const phase = [...p.id].reduce((a, c) => a + c.charCodeAt(0), 0);
+      model.phases.setX(i, phase);
+      statics.current[i] = {
+        phase,
+        colours: [
+          p.color,
+          ...[
+            p.look.skin,
+            p.look.hairColor,
+            p.look.bottom,
+            p.look.shoeColor,
+          ].map((c) => new THREE.Color(c)),
+        ],
+      };
       model.shirts.setXYZ(i, p.color.r, p.color.g, p.color.b);
       for (const [attribute, colour] of [
         [model.skins, p.look.skin],
@@ -495,6 +511,8 @@ export function Residents() {
         attribute.setXYZ(i, c.r, c.g, c.b);
       }
     }
+    statics.current.length = crowd.length;
+    drawOrder.current = "";
     model.states.needsUpdate =
       model.phases.needsUpdate =
       model.shirts.needsUpdate =
@@ -545,6 +563,32 @@ export function Residents() {
       animated ||
       !lastCamera.current.equals(camera.matrixWorld) ||
       lastHeight.current !== size.height;
+    // Draw only the impostors in sight, packed at the front of the batch; people shown as rigged
+    // actors follow them (not drawn, still pickable), and anyone clipped is left out entirely.
+    let shown = 0,
+      rigged = 0;
+    const order: string[] = [],
+      put = (n: number, i: number, state: number, matrix: THREE.Matrix4) => {
+        const fixed = statics.current[i];
+        mesh.setMatrixAt(n, matrix);
+        model.states.setX(n, state);
+        if (!fixed) return;
+        model.phases.setX(n, fixed.phase);
+        [
+          model.shirts,
+          model.skins,
+          model.hairs,
+          model.bottoms,
+          model.shoes,
+        ].forEach((attribute, k) =>
+          attribute.setXYZ(
+            n,
+            fixed.colours[k].r,
+            fixed.colours[k].g,
+            fixed.colours[k].b,
+          ),
+        );
+      };
     for (let i = 0; i < crowd.length; i++) {
       const person = crowd[i],
         at = positions.current.get(person.id);
@@ -633,14 +677,46 @@ export function Residents() {
           nearSet.current.has(person.id) && ready.current.has(person.id)
             ? 1
             : 0;
-      model.states.setX(
-        i,
-        pose + 16 * condition + 64 * near + 128 * person.hairKind,
-      );
-      dummy.scale.setScalar(clip ? 0 : 1);
+      const crowdState =
+        pose + 16 * condition + 64 * near + 128 * person.hairKind;
+      if (clip) continue;
+      dummy.scale.setScalar(1);
       dummy.rotation.y = yaw;
       dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
+      if (near) {
+        const slot = (riggedScratch.current[rigged++] ??= {
+          i: 0,
+          state: 0,
+          matrix: new THREE.Matrix4(),
+        });
+        slot.i = i;
+        slot.state = crowdState;
+        slot.matrix.copy(dummy.matrix);
+      } else if (Math.abs(point.x) < 1.2 && Math.abs(point.y) < 1.3) {
+        // Impostors cast no shadow, so one outside the view is simply not drawn.
+        put(shown++, i, crowdState, dummy.matrix);
+        order.push(person.id);
+      }
+    }
+    for (let r = 0; r < rigged; r++) {
+      const slot = riggedScratch.current[r];
+      put(shown + r, slot.i, slot.state, slot.matrix);
+      order.push(crowd[slot.i].id);
+    }
+    mesh.count = shown;
+    mesh.userData.pickCount = shown + rigged;
+    const signature = order.join(",");
+    if (signature !== drawOrder.current) {
+      drawOrder.current = signature;
+      mesh.userData.ids = order;
+      model.phases.needsUpdate =
+        model.shirts.needsUpdate =
+        model.skins.needsUpdate =
+        model.hairs.needsUpdate =
+        model.bottoms.needsUpdate =
+        model.shoes.needsUpdate =
+          true;
+      changed = true;
     }
     // Rigged actors near the player, with hysteresis: promote inside 26 m, keep until 34 m,
     // and hold each promotion for a couple of seconds so nobody pops in and out.

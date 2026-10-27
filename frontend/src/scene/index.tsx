@@ -105,6 +105,10 @@ declare global {
       };
       hidePins: (hidden: boolean) => void;
       drawBreakdown: () => Record<string, number>;
+      triangleBreakdown: (
+        shadows?: boolean,
+        depth?: number,
+      ) => Record<string, number>;
       scene: THREE.Scene;
       screenPoint: (
         x: number,
@@ -1219,6 +1223,47 @@ function City({
         gl.render(scene, camera);
         gl.renderBufferDirect = direct;
         counts.total = gl.info.render.calls;
+        return counts;
+      },
+      triangleBreakdown: (shadows = true, depth = 2) => {
+        // Triangles per top-level group for one frame (shadow passes prefixed "shadow:").
+        const counts: Record<string, number> = {},
+          direct = gl.renderBufferDirect;
+        const label = (o: THREE.Object3D) => {
+          const path: string[] = [];
+          for (let p: THREE.Object3D | null = o; p && p !== scene; p = p.parent)
+            if (p.name) path.unshift(p.name);
+          return path.slice(0, depth).join("/") || o.type;
+        };
+        gl.renderBufferDirect = (
+          cam,
+          sc,
+          geometry,
+          material,
+          object,
+          group,
+        ) => {
+          const key = `${cam === camera ? "" : "shadow:"}${label(object)}`,
+            total = geometry.index
+              ? geometry.index.count
+              : geometry.getAttribute("position").count,
+            range = Math.min(
+              total,
+              group ? group.count : geometry.drawRange.count,
+            ),
+            instances = (object as THREE.InstancedMesh).isInstancedMesh
+              ? (object as THREE.InstancedMesh).count
+              : 1;
+          counts[key] =
+            (counts[key] ?? 0) + Math.round((range / 3) * instances);
+          direct.call(gl, cam, sc, geometry, material, object, group);
+        };
+        if (shadows) gl.shadowMap.needsUpdate = true;
+        gl.info.reset();
+        gl.render(scene, camera);
+        gl.renderBufferDirect = direct;
+        counts.total = gl.info.render.triangles;
+        counts.calls = gl.info.render.calls;
         return counts;
       },
       screenPoint: (x, y, z) => {

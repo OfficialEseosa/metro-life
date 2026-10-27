@@ -15,6 +15,12 @@ import { atlSites } from "./cities/atl";
 import { lightUniforms } from "../lighting";
 import { navigation } from "../navigation";
 import { shadowFocus } from "./world-lighting";
+import {
+  CULL_PRIORITY,
+  cameraChanged,
+  inView,
+  viewFrustum,
+} from "./instance-cull";
 
 export type DriveRoute = {
   x: number;
@@ -25,8 +31,9 @@ export type DriveRoute = {
   ey: number;
 };
 const noPick = () => {};
-const scratchObject = new THREE.Object3D(),
-  scratchColour = new THREE.Color();
+/** Sight range for small street furniture while following the player (fog starts at 60 m). */
+const SMALL_PROP_RANGE = 120;
+const scratchObject = new THREE.Object3D();
 /** Bake the glTF hierarchy once, keeping its atlas and normals, then instance each material batch. */
 export function KitInstances({
   url,
@@ -212,67 +219,130 @@ function KitBatch({
     ref.current.computeBoundingSphere();
   });
 
-  // Instances are written nearest-first around the shadow focus, so the near
-  // shadow pass can draw just the first `near` of them (see onBeforeShadow).
-  const order = useRef({ version: -1, near: placements.length });
-  const write = (focus: { x: number; z: number; radius: number } | null) => {
+  // Placements are kept nearest-first around the shadow focus (rebuilt when the focus moves),
+  // so the shadow pass can draw just the first `near` of them (see onBeforeShadow). While
+  // following the player, the main pass also skips instances outside the camera's view.
+  const sorted = useRef<{
+    version: number;
+    follow: boolean;
+    near: number;
+    items: {
+      matrix: THREE.Matrix4;
+      colour: THREE.Color;
+      centre: THREE.Vector3;
+      radius: number;
+      distance: number;
+    }[];
+  }>({ version: -2, follow: false, near: 0, items: [] });
+  const drawn = useRef({ count: placements.length, near: placements.length }),
+    lastCamera = useMemo(() => new THREE.Matrix4(), []);
+  // Street furniture (hydrants, planters, lamps, benches, bushes) is drawn only within sight
+  // range of the player at street level; buildings and anything large always draw.
+  const local = useMemo(() => {
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    const size = geometry.boundingBox!.getSize(new THREE.Vector3()),
+      scale = Math.max(1, ...placements.map((p) => p.scale ?? 1));
+    return {
+      sphere: geometry.boundingSphere!.clone(),
+      range:
+        Math.max(size.x, size.y, size.z) * scale < 7
+          ? SMALL_PROP_RANGE
+          : Infinity,
+    };
+  }, [geometry, placements]);
+  const rebuild = (focus: { x: number; z: number; radius: number } | null) => {
+    const d = scratchObject,
+      items = placements.map((p) => {
+        d.position.set(p.x, p.y, p.z);
+        d.rotation.set(p.pitch ?? 0, p.angle, 0);
+        d.scale.setScalar(p.scale ?? 1);
+        d.updateMatrix();
+        return {
+          matrix: d.matrix.clone(),
+          colour: new THREE.Color(p.color),
+          centre: local.sphere.center.clone().applyMatrix4(d.matrix),
+          radius: local.sphere.radius * (p.scale ?? 1),
+          distance: focus
+            ? Math.hypot(p.x - focus.x, p.z - focus.z) -
+              Math.hypot(p.sx, p.sz) / 2
+            : 0,
+        };
+      });
+    if (focus) items.sort((a, b) => a.distance - b.distance);
+    sorted.current.items = items;
+    sorted.current.follow = !!focus;
+    sorted.current.near =
+      focus && shadow
+        ? items.filter((item) => item.distance < focus.radius).length
+        : 0;
+  };
+  const draw = (view: THREE.Frustum | null) => {
     const m = ref.current!,
-      d = scratchObject,
-      colour = scratchColour,
-      list = focus
-        ? [...placements].sort(
-            (a, b) =>
-              Math.hypot(a.x - focus.x, a.z - focus.z) -
-              Math.hypot(b.x - focus.x, b.z - focus.z),
-          )
-        : placements;
-    let near = 0;
-    list.forEach((p, i) => {
-      d.position.set(p.x, p.y, p.z);
-      d.rotation.set(p.pitch ?? 0, p.angle, 0);
-      d.scale.setScalar(p.scale ?? 1);
-      d.updateMatrix();
-      m.setMatrixAt(i, d.matrix);
-      m.setColorAt(i, colour.set(p.color));
+      { items, near, follow } = sorted.current;
+    let n = 0;
+    items.forEach((item, k) => {
       if (
-        focus &&
-        Math.hypot(p.x - focus.x, p.z - focus.z) <
-          focus.radius + Math.hypot(p.sx, p.sz) / 2
+        follow &&
+        k >= near &&
+        (item.distance > local.range ||
+          (view &&
+            !inView(
+              view,
+              item.centre.x,
+              item.centre.y,
+              item.centre.z,
+              item.radius,
+            )))
       )
-        near = i + 1;
+        return;
+      m.setMatrixAt(n, item.matrix);
+      m.setColorAt(n, item.colour);
+      n++;
     });
-    order.current.near = focus ? near : list.length;
+    m.count = n;
+    drawn.current.count = n;
+    drawn.current.near = follow ? Math.min(near, n) : n;
     m.instanceMatrix.needsUpdate = true;
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    m.computeBoundingSphere();
   };
   useLayoutEffect(() => {
     const m = ref.current!;
-    order.current.version = -1;
-    write(null);
-    m.computeBoundingSphere();
+    sorted.current.version = -2;
+    if (!drive) {
+      rebuild(null);
+      draw(null);
+    }
     m.updateMatrix();
     m.matrixAutoUpdate = false;
     if (!shadow || drive) return;
-    const full = placements.length;
     m.onBeforeShadow = () => {
-      if (shadowFocus.follow) m.count = order.current.near;
+      if (shadowFocus.follow) m.count = drawn.current.near;
     };
     m.onAfterShadow = () => {
-      m.count = full;
+      m.count = drawn.current.count;
     };
     return () => {
       m.onBeforeShadow = () => {};
       m.onAfterShadow = () => {};
-      m.count = full;
     };
-    // oxlint-disable-next-line react-hooks/exhaustive-deps -- write only reads refs and placements.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- rebuild and draw only read refs and placements.
   }, [placements, shadow, drive]);
-  useFrame(() => {
-    if (!shadow || drive || !ref.current) return;
-    if (order.current.version === shadowFocus.version) return;
-    order.current.version = shadowFocus.version;
-    write(shadowFocus.follow ? shadowFocus : null);
-  });
+  useFrame(({ camera, clock }) => {
+    if (drive || !ref.current) return;
+    const moved = sorted.current.version !== shadowFocus.version;
+    if (moved) {
+      sorted.current.version = shadowFocus.version;
+      rebuild(shadowFocus.follow ? shadowFocus : null);
+    }
+    if (!shadowFocus.follow) {
+      if (moved) draw(null);
+      return;
+    }
+    if (cameraChanged(camera, lastCamera) || moved)
+      draw(viewFrustum(camera, clock.elapsedTime));
+  }, CULL_PRIORITY);
   return (
     <>
       {drive && <CarLights source={ref} count={placements.length} />}

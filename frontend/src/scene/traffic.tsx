@@ -9,6 +9,8 @@ import type { CityId } from "../api/types";
 import { streets } from "../street-network";
 import { navigation } from "../navigation";
 import { sitesFor } from "./cities";
+import { shadowFocus } from "./world-lighting";
+import { CULL_PRIORITY, inView, viewFrustum } from "./instance-cull";
 
 export function Traffic({ city }: { city: CityId }) {
   return (
@@ -21,7 +23,13 @@ function StreetCars({ city }: { city: CityId }) {
   const graph = streets[city],
     { scene } = useGLTF("/models/vehicles/sedan.glb"),
     meshes = useRef<(THREE.InstancedMesh | null)[]>([]),
-    dummy = useMemo(() => new THREE.Object3D(), []);
+    dummy = useMemo(() => new THREE.Object3D(), []),
+    // Per frame: cars sorted nearest-first, how many to draw and how many cast shadows.
+    drawn = useRef({ view: 0, shadow: 0 }),
+    order = useMemo(
+      () => [] as { i: number; distance: number; matrix: THREE.Matrix4 }[],
+      [],
+    );
   const batches = useMemo(() => {
     scene.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(scene),
@@ -127,7 +135,7 @@ function StreetCars({ city }: { city: CityId }) {
   useEffect(() => {
     for (const batch of batches) batch.material.emissive.set("#152126");
   }, [batches]);
-  useFrame((_, dt) => {
+  useFrame(({ camera, clock }, dt) => {
     const glow = 0.18 * timeOfDay.nightFactor;
     for (const batch of batches) batch.material.emissiveIntensity = glow;
     for (let i = 0; i < cars.length; i++) {
@@ -171,14 +179,51 @@ function StreetCars({ city }: { city: CityId }) {
       dummy.rotation.set(0, car.yaw, 0);
       dummy.scale.setScalar(1);
       dummy.updateMatrix();
-      for (const mesh of meshes.current) mesh?.setMatrixAt(i, dummy.matrix);
+      const slot = (order[i] ??= {
+        i,
+        distance: 0,
+        matrix: new THREE.Matrix4(),
+      });
+      slot.i = i;
+      slot.matrix.copy(dummy.matrix);
+      slot.distance = Math.hypot(
+        dummy.position.x - shadowFocus.x,
+        dummy.position.z - shadowFocus.z,
+      );
     }
+    // Following the player, cars inside the shadow box come first (they cast), then any other
+    // car in view; cars out of sight are not drawn. The city overview draws every car.
+    const live = order.slice(0, cars.length),
+      follow = shadowFocus.follow,
+      view = follow ? viewFrustum(camera, clock.elapsedTime) : null;
+    if (follow) live.sort((a, b) => a.distance - b.distance);
+    let count = 0,
+      shadow = 0;
+    for (const car of live) {
+      const near = !follow || car.distance < shadowFocus.radius + 3,
+        seen =
+          near ||
+          inView(
+            view!,
+            car.matrix.elements[12],
+            car.matrix.elements[13] + 0.7,
+            car.matrix.elements[14],
+            1.5,
+          );
+      if (!seen) continue;
+      for (const mesh of meshes.current) mesh?.setMatrixAt(count, car.matrix);
+      count++;
+      if (near) shadow = count;
+    }
+    drawn.current.view = count;
+    drawn.current.shadow = shadow;
     for (const mesh of meshes.current)
       if (mesh) {
+        mesh.count = count;
         mesh.instanceMatrix.needsUpdate = true;
         mesh.computeBoundingSphere();
       }
-  });
+  }, CULL_PRIORITY);
   return (
     <group name="street-traffic">
       {batches.map((batch, i) => (
@@ -189,6 +234,15 @@ function StreetCars({ city }: { city: CityId }) {
             meshes.current[i] = m;
           }}
           args={[batch.geometry, batch.material, cars.length]}
+          onBeforeShadow={() => {
+            const mesh = meshes.current[i];
+            if (mesh)
+              mesh.count = Math.min(drawn.current.view, drawn.current.shadow);
+          }}
+          onAfterShadow={() => {
+            const mesh = meshes.current[i];
+            if (mesh) mesh.count = drawn.current.view;
+          }}
           castShadow
           receiveShadow
           raycast={() => {}}

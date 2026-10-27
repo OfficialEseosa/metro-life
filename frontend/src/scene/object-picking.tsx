@@ -441,7 +441,10 @@ export function ObjectPicking({
         residents = scene.getObjectByName("residents");
       if (residents instanceof THREE.InstancedMesh && visible(residents)) {
         const ids = residents.userData.ids as string[] | undefined;
-        for (let i = 0; i < residents.count; i++) {
+        const pickable =
+          (residents.userData.pickCount as number | undefined) ??
+          residents.count;
+        for (let i = 0; i < pickable; i++) {
           const person = people.find((p) => p.id === ids?.[i]);
           if (!person) continue;
           residents.getMatrixAt(i, instance);
