@@ -508,9 +508,10 @@ function cardsAboveControls(stack: HTMLElement) {
  * plate, so the stack narrows instead of sliding under it; when the event chip and the social row
  * leave no room on the right, it moves to the left column under the cue pills.
  */
+const ARRANGED = ["width", "left", "right", "top"];
 function arrangeCompact(stack: HTMLElement) {
-  for (const prop of ["width", "left", "right", "top"])
-    stack.style.removeProperty(prop);
+  for (const prop of ARRANGED) stack.style.removeProperty(prop);
+  stack.dataset.arranged = "";
   const vitals = document.querySelector(".vitals")?.getBoundingClientRect();
   if (vitals?.height) {
     const box = stack.getBoundingClientRect();
@@ -534,6 +535,11 @@ function placeStack(stack: HTMLElement | null) {
     normal = compact ? 2 : 3;
   if (!stack) return normal;
   if (compact) arrangeCompact(stack);
+  else if (stack.dataset.arranged !== undefined) {
+    // The window grew from a phone layout (a rotation, a resize): let the stylesheet place the stack again.
+    for (const prop of ARRANGED) stack.style.removeProperty(prop);
+    delete stack.dataset.arranged;
+  }
   let card: DOMRect | null = null;
   for (const el of document.querySelectorAll<HTMLElement>(TASK_CARDS)) {
     const box = el.getBoundingClientRect();
