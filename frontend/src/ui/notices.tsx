@@ -63,7 +63,9 @@ export function HudNotice({
       onFocus={() => setHeld(true)}
       onBlur={() => setHeld(false)}
     >
-      <span className={`semantic-tile ${tone === "error" ? "hunger" : "travel"}`}>
+      <span
+        className={`semantic-tile ${tone === "error" ? "hunger" : "travel"}`}
+      >
         <Icon name={icon} />
       </span>
       <div>

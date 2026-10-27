@@ -18,7 +18,8 @@
   animation: sheet-in var(--dur-2) var(--ease-out) both;
 }
 /* While decorating, the rest of the HUD steps aside. */
-.metro-hud:has(.buy-mode--3d) > :not(.buy-mode):not(.purchase-confirmation):not(.hud-toasts) {
+.metro-hud:has(.buy-mode--3d)
+  > :not(.buy-mode):not(.purchase-confirmation):not(.hud-toasts) {
   visibility: hidden;
   pointer-events: none;
 }

@@ -40,7 +40,7 @@ export function MapTools({ close }: { close: () => void }) {
       aria-label="Search the city"
     >
       <div className="search-row">
-        <Search size={20} />
+        <Search size={20} weight="bold" />
         <input
           ref={input}
           aria-label="Search places"
@@ -53,7 +53,7 @@ export function MapTools({ close }: { close: () => void }) {
           aria-label="Close search"
           onClick={close}
         >
-          <X size={20} />
+          <X size={20} weight="bold" />
         </button>
       </div>
       <div className="lenses" aria-label="Map lenses">

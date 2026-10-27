@@ -85,10 +85,7 @@ function socialScore(n: Player, p: Position) {
     dx = at.x - p.x,
     dz = at.z - p.z,
     distance = Math.hypot(dx, dz),
-    facing =
-      distance > 0.01
-        ? Math.cos(Math.atan2(dx, dz) - (p.face ?? 0))
-        : 1; // 1 straight ahead, -1 behind
+    facing = distance > 0.01 ? Math.cos(Math.atan2(dx, dz) - (p.face ?? 0)) : 1; // 1 straight ahead, -1 behind
   return distance * (1 + 0.45 * (1 - facing)) * (n.npc ? 1 : 0.5);
 }
 /** The person a social action reaches from `p` (see SocialTarget in the store). */
@@ -174,7 +171,10 @@ export async function meet(
     useWalking.setState({ error: "" });
     return "sent";
   } catch (e) {
-    const message = friendlyMessage(e, `Could not reach ${person.username}. Try again.`);
+    const message = friendlyMessage(
+      e,
+      `Could not reach ${person.username}. Try again.`,
+    );
     useWalking.setState({ error: message });
     return message;
   } finally {

@@ -86,7 +86,9 @@
 }
 /* The feedback toast stack flows under the banner on wide screens. */
 .metro-hud:has(.world-event-banner) {
-  --feedback-top: calc(max(var(--hud-gap, 16px), env(safe-area-inset-top)) + 100px);
+  --feedback-top: calc(
+    max(var(--hud-gap, 16px), env(safe-area-inset-top)) + 100px
+  );
 }
 
 /* ---------- emote wheel ---------- */
@@ -397,6 +399,10 @@
 
 /* ================= compact: phones in landscape ================= */
 @media (max-width: 760px), (max-height: 520px) {
+  /* Toasts hang from the right edge too, so they start under the event chip. */
+  .metro-hud:has(.world-event-banner) {
+    --feedback-top: calc(var(--hud-top) + 60px);
+  }
   .world-event-banner {
     top: var(--hud-top, 76px);
     left: auto;
