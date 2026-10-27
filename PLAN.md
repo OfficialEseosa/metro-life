@@ -4,6 +4,8 @@
 
 Playable: quick start or the full creator, arrival, walking, jobs and shifts, needs, meals and groceries, furnishing, stories, aspirations, elections, plots and billboards, travel between three cities, shared presence, chat, emotes and city events.
 
+Second round of fixes has landed: one-time live frames (waves, gifts, chat, events) are durable and no longer lost when a page falls behind, home furniture is preloaded, poses are fixed, the economy is rebalanced so one shift a day can carry the first few homes, and the phone social row and toasts are fixed.
+
 Verified on this build: the seven Playwright journeys (first start, resume after reload, two players, outage and reconnect, paid shift, two-way social visit, flight) pass at 1366x768 and at 667x375 with touch. The frontend builds and lints with no errors and the backend packages as an API-only JAR. Nothing is hosted yet; the manual steps are in `docs/deploy.md`.
 
 Play review against The Sims 4, Animal Crossing, Two Point Hospital and Tiny Glade, scored out of 10 (software renderer, both viewports). Overall about 7.9 against a target of 8.5.
