@@ -13,8 +13,9 @@
   /* The HUD anchors the stack to the top edge on laptops and above the dock on phones. */
   top: var(--feedback-top, max(10px, env(safe-area-inset-top)));
   bottom: var(--feedback-bottom, auto);
-  /* Centred by default; the HUD can anchor the stack beside its vitals plate instead. */
+  /* Centred by default; the HUD can anchor the stack beside its vitals plate or to the right edge. */
   left: var(--feedback-left, 50%);
+  right: var(--feedback-right, auto);
   width: var(--feedback-max-width, 440px);
   max-width: calc(100vw - 32px);
   margin: 0;
@@ -261,7 +262,7 @@
 @media (max-width: 700px) {
   .feedback-toasts {
     width: var(--feedback-max-width, min(320px, calc(100vw - 340px)));
-    min-width: min(280px, calc(100vw - 32px));
+    min-width: min(200px, calc(100vw - 32px));
     gap: 6px;
   }
   .feedback-toast {
@@ -279,15 +280,18 @@
   }
 }
 
-/* Phones in landscape: the stack sits just above the dock, under the player. One kicker line and
-   one title line keep a card below the player's feet; errors and messages keep their sentence. */
+/* Phones in landscape: the stack hangs from the top-right edge, under the sound button and clear of
+   the player. One kicker line and one title line keep a card short; errors and messages keep their sentence. */
 @media (max-height: 520px) {
-  /* The strip between the joystick and the action stack is narrow: the tone colour carries the
-     kind, so the icon steps aside and the kicker and title each get one whole line. */
+  /* The column is narrow: the tone colour carries the kind, so the icon steps aside and the
+     kicker and title each get one whole line. */
+  .feedback-toasts {
+    gap: 4px;
+  }
   .feedback-toast,
   .tone-big {
-    min-height: 52px;
-    padding-left: 12px;
+    min-height: 48px;
+    padding: 4px 12px;
   }
   .feedback-toast .feedback-icon {
     display: none;

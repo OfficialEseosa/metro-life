@@ -482,14 +482,58 @@ const COINS = 6,
 const TASK_CARDS = ".shift-timing, [data-task-card]";
 let activeLayers = 0;
 
+/** HUD controls the stack must never run into when it hangs from the top edge. */
+const HUD_CONTROLS = ".hud-action-stack > *, .bottom-dock, .stick-base";
+
+/** How many cards fit between the top of the stack and the first HUD control below it. */
+function cardsAboveControls(stack: HTMLElement) {
+  const column = stack.getBoundingClientRect();
+  let floor = Infinity;
+  for (const el of document.querySelectorAll<HTMLElement>(HUD_CONTROLS)) {
+    const box = el.getBoundingClientRect();
+    if (
+      box.width &&
+      box.height &&
+      box.top >= column.top &&
+      box.right > column.left &&
+      box.left < column.right
+    )
+      floor = Math.min(floor, box.top);
+  }
+  return Math.floor((floor - column.top + 8) / TOAST_STEP);
+}
+
 /**
- * Keeps the stack clear of an open task card on compact screens: it sits just above the card,
- * holds only as many toasts as fit there, and returns that count (0 hides toasts for now).
+ * Compact screens: the stack hangs from the top-right edge. A long cash figure widens the vitals
+ * plate, so the stack narrows instead of sliding under it; when the event chip and the social row
+ * leave no room on the right, it moves to the left column under the cue pills.
+ */
+function arrangeCompact(stack: HTMLElement) {
+  for (const prop of ["width", "left", "right", "top"])
+    stack.style.removeProperty(prop);
+  const vitals = document.querySelector(".vitals")?.getBoundingClientRect();
+  if (vitals?.height) {
+    const box = stack.getBoundingClientRect();
+    if (box.top < vitals.bottom && box.left < vitals.right + 8)
+      stack.style.width = `${Math.max(180, Math.round(box.right - vitals.right - 8))}px`;
+  }
+  if (cardsAboveControls(stack) >= 1) return;
+  const cues = document.querySelector(".hud-left")?.getBoundingClientRect();
+  stack.style.width = `${Math.min(292, innerWidth / 2 - 24)}px`;
+  stack.style.left = "8px";
+  stack.style.right = "auto";
+  stack.style.top = `${Math.round((cues?.height ? cues.bottom : 76) + 6)}px`;
+}
+
+/**
+ * Keeps the stack clear of the player, the HUD and any open task card, and returns how many
+ * cards it may hold (0 hides toasts for now): two on compact screens, three on laptops.
  */
 function placeStack(stack: HTMLElement | null) {
   const compact = innerWidth <= 760 || innerHeight <= 520,
     normal = compact ? 2 : 3;
   if (!stack) return normal;
+  if (compact) arrangeCompact(stack);
   let card: DOMRect | null = null;
   for (const el of document.querySelectorAll<HTMLElement>(TASK_CARDS)) {
     const box = el.getBoundingClientRect();
@@ -498,7 +542,8 @@ function placeStack(stack: HTMLElement | null) {
   const column = stack.getBoundingClientRect(),
     overlaps =
       !!card &&
-      (compact || (column.bottom > card.top && column.top < card.bottom)) &&
+      column.top + normal * TOAST_STEP > card.top &&
+      column.top < card.bottom &&
       column.left < card.right &&
       column.right > card.left;
   if (!card || !overlaps) {
@@ -506,7 +551,7 @@ function placeStack(stack: HTMLElement | null) {
       stack.style.removeProperty("top");
       stack.style.removeProperty("bottom");
     }
-    return normal;
+    return Math.max(1, Math.min(normal, cardsAboveControls(stack)));
   }
   const room = card.top - 16;
   stack.style.top = "auto";
