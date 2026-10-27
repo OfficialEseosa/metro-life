@@ -14,6 +14,7 @@ import {
 } from "./primitives";
 import { money, useNow, useTask } from "./helpers";
 import { sound } from "./sound";
+import { budgetLine, homeBudget } from "../api/budget";
 import { plotRectangle } from "../plot-selection";
 /** The server's own list of what is left on the first day, when it sends one. */
 const firstDayLeft = (sim: { firstDay?: object | null }, fallback: string) =>
@@ -838,6 +839,11 @@ export function HomesPanel() {
     [review, setReview] = useState<string | null>(null),
     destination = world?.cities.find((c) => c.id === city),
     choice = destination?.neighborhoods.find((n) => n.id === review);
+  /** The server's daily budget for a neighbourhood, only for the city the player lives in. */
+  const budgetFor = (id: string) => {
+    const b = homeBudget(sim, id);
+    return b && b.city === city && sim?.home.city === city ? b : null;
+  };
   const reason = (rent: number, current = false) =>
     working
       ? "Moving your home…"
@@ -911,6 +917,20 @@ export function HomesPanel() {
               <p>
                 {money(n.rent)} per game day · {money(n.rent)} upfront to move
               </p>
+              {(() => {
+                const b = budgetFor(n.id);
+                if (!b) return null;
+                const net = Math.round(b.dailyNet);
+                return (
+                  <p
+                    className={`home-net ${net >= 0 ? "gain" : "loss"}`}
+                    data-testid="home-daily-net"
+                  >
+                    {net >= 0 ? "+" : "-"}${Math.abs(net)} a day after one shift
+                    and meals
+                  </p>
+                );
+              })()}
               <small>
                 {errorRead
                   ? "Resident list unavailable"
@@ -943,6 +963,18 @@ export function HomesPanel() {
             {money(choice.rent)} each game midnight. Travelling here alone never
             changes your home.
           </p>
+          {budgetFor(choice.id) && budgetLine(sim, choice.id) && (
+            <p
+              className={`home-net ${budgetFor(choice.id)!.dailyNet >= 0 ? "gain" : "loss"}`}
+            >
+              {budgetLine(sim, choice.id)}
+            </p>
+          )}
+          {budgetFor(choice.id) && budgetFor(choice.id)!.dailyNet < 0 && (
+            <p className="notice">
+              One shift a day will not cover this home yet.
+            </p>
+          )}
           {sim && sim.cash - choice.rent < choice.rent && (
             <p className="notice">
               After this move you would have {money(sim.cash - choice.rent)}{" "}

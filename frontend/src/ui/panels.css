@@ -546,6 +546,17 @@
   grid-column: 2;
   width: 100%;
 }
+.home-option p.home-net,
+.travel-review p.home-net {
+  font-size: 16px;
+  font-weight: 800;
+}
+.home-net.gain {
+  color: var(--c-primary-text);
+}
+.home-net.loss {
+  color: var(--c-danger-text);
+}
 .candidate-self {
   display: block;
   margin-top: var(--s-1);
