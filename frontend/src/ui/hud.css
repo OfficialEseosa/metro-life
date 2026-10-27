@@ -1216,6 +1216,23 @@
   .first-day-cue small::after {
     content: " · ";
   }
+  .first-day-cue small:last-child::after {
+    content: none;
+  }
+  .first-day-cue .cue-eyebrow {
+    display: none;
+  }
+  .first-day-cue.saving {
+    border-radius: var(--r-lg);
+  }
+  .first-day-cue.saving > span:last-child {
+    white-space: normal;
+    line-height: 1.2;
+  }
+  .first-day-cue.saving strong,
+  .first-day-cue.saving small:not(.cue-eyebrow) {
+    display: block;
+  }
   .first-day-cue small,
   .first-day-cue strong {
     display: inline;

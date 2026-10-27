@@ -7,6 +7,8 @@ import { CharacterCreator, PersonalitySummary } from "./character-creator";
 import { ReasonButton, ErrorMessage, Icon } from "./primitives";
 import { titleCase } from "./needs";
 import { money, useTask } from "./helpers";
+import { homeUpgrade } from "../api/budget";
+import type { Sim } from "../api/types";
 import "./entry.css";
 import { AudioSettings } from "./audio";
 const state = () => useStore.getState();
@@ -133,27 +135,63 @@ const GOALS: { id: FirstDayStep; label: string; hint: string; icon: string }[] =
       icon: "house",
     },
   ];
+/**
+ * What the player is saving towards, from the server's budget: the home worth moving to and the
+ * cash still missing for it. Null while no dearer home is sustainable on one shift a day.
+ */
+function savingGoal(sim: Sim | null) {
+  const up = homeUpgrade(sim);
+  if (!sim || !up) return null;
+  const missing = Math.max(0, Math.ceil(up.cashNeeded - sim.cash));
+  return {
+    name: up.name,
+    rent: up.rent,
+    missing,
+    line: `${up.name}, ${missing > 0 ? `${money(missing)} to go` : "ready to move"}`,
+  };
+}
+
 /** Compact first-day cue for the HUD. Re-renders only when a step changes. */
 function FirstDayCue() {
   const steps = useStore((s) => {
     const f = s.sim?.firstDay;
     if (!f) return "";
-    if (f.complete) return s.sim!.home.kind === "studio" ? "next" : "";
+    if (f.complete) {
+      if (s.sim!.home.kind !== "studio") return "";
+      const goal = savingGoal(s.sim);
+      return goal ? `next:${goal.line}` : "keep";
+    }
     return GOALS.map((g) => (f[g.id] ? "1" : "0")).join("");
   });
   if (!steps) return null;
-  if (steps === "next")
+  if (steps === "keep")
     return (
       <button
         className="first-day-cue plate"
+        onClick={() => state().openPanel("jobs")}
+      >
+        <span className="semantic-tile money">
+          <Icon name="coins" />
+        </span>
+        <span>
+          <small>Next chapter</small>
+          <strong>Keep saving</strong>
+        </span>
+      </button>
+    );
+  if (steps.startsWith("next:"))
+    return (
+      <button
+        className="first-day-cue plate saving"
         onClick={() => state().openPanel("homes")}
       >
         <span className="semantic-tile rest">
           <Icon name="house" />
         </span>
         <span>
-          <small>Next chapter</small>
+          <small className="cue-eyebrow">Next chapter</small>
           <strong>Save for a better home</strong>
+          <small>{steps.slice(5)}</small>
         </span>
       </button>
     );
@@ -398,7 +436,8 @@ export function FirstDayClosing() {
   const sim = useStore((s) => s.sim)!,
     world = useStore((s) => s.world)!,
     { working, error, run } = useTask();
-  const city = world.cities.find((c) => c.id === sim.city)!;
+  const city = world.cities.find((c) => c.id === sim.city)!,
+    goal = savingGoal(sim);
   return (
     <div className="intro-story">
       <section
@@ -416,11 +455,24 @@ export function FirstDayClosing() {
           .
         </h1>
         <p>Rent paid, a job, a friend. You have made a beginning.</p>
-        <p>
-          <strong>Next: save for a better home.</strong>
-          <br />
-          Keep working, look after yourself, and find a place with room to grow.
-        </p>
+        {goal ? (
+          <p>
+            <strong>Next: save for a better home.</strong>
+            <br />
+            {goal.name} is {money(goal.rent)} a day and one shift a day can
+            carry it.{" "}
+            {goal.missing > 0
+              ? `Save ${money(goal.missing)} more to move there.`
+              : "You have enough to move there now."}
+          </p>
+        ) : (
+          <p>
+            <strong>Next: keep your savings growing.</strong>
+            <br />
+            Keep working and look after yourself. A better home will come when
+            your savings can carry it.
+          </p>
+        )}
         <ErrorMessage text={error} />
         <ReasonButton
           className="primary full"
