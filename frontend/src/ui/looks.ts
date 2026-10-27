@@ -84,26 +84,46 @@ export const colourName = (hex: string, fallback: string) =>
 export const pick = <T>(values: readonly T[]) =>
   values[Math.floor(Math.random() * values.length)];
 
+/** Hair styles per body, matching what the server's quick start may draw. */
+const HAIR_F = [
+  "bob",
+  "long",
+  "ponytail",
+  "bun",
+  "curly",
+  "afro",
+  "braids",
+  "sideshave",
+  "short",
+  "messy",
+] as const;
+const HAIR_M = [
+  "short",
+  "quiff",
+  "spiky",
+  "messy",
+  "curly",
+  "afro",
+  "bald",
+  "long",
+  "sideshave",
+  "mohawk",
+] as const;
+
 /** A ready-to-play look with harmonious everyday, work and sleep outfits. */
 export function readyLook(): Look {
   const top = pick(TOPS.filter((c) => c !== "#ffffff" && c !== "#3a3a3a")),
     bottom = pick(BOTTOMS),
     shoeColor = pick(SHOES),
     style = pick(["casual", "street"]);
+  const body = pick(["f", "m"] as const);
   return {
-    body: pick(["f", "m"]),
+    body,
     skin: pick(SKIN_TONES),
-    hair: pick([
-      "curly",
-      "bob",
-      "short",
-      "bun",
-      "afro",
-      "braids",
-      "long",
-      "ponytail",
-    ]),
-    hairColor: pick(HAIR_COLOURS.slice(0, 9)),
+    hair: pick(body === "f" ? HAIR_F : HAIR_M),
+    // The fun colour turns up about one time in twenty, like the server's draw.
+    hairColor:
+      Math.random() < 0.05 ? HAIR_COLOURS[9] : pick(HAIR_COLOURS.slice(0, 9)),
     face: pick(["soft", "bright", "angular", "freckled"]),
     top,
     bottom,
