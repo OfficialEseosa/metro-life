@@ -14,8 +14,18 @@ import {
   interact,
   type InteractionIntent,
 } from "../walking";
-import { nearbyBench, nearbyDoor, interiorType, roomLayout, roomType } from "../navigation";
-import { clearQueuedInteractions, enqueueAction, useInteractions } from "../interactions";
+import {
+  nearbyBench,
+  nearbyDoor,
+  interiorType,
+  roomLayout,
+  roomType,
+} from "../navigation";
+import {
+  clearQueuedInteractions,
+  enqueueAction,
+  useInteractions,
+} from "../interactions";
 import { policyHours, actionReason, workCareNote } from "./action-rules";
 import { serverNow } from "../server-time";
 
@@ -104,7 +114,10 @@ export function Joystick() {
   useEffect(
     () =>
       useStore.subscribe((s, previous) => {
-        if ((s.panel && !previous.panel) || (s.searchOpen && !previous.searchOpen)) {
+        if (
+          (s.panel && !previous.panel) ||
+          (s.searchOpen && !previous.searchOpen)
+        ) {
           motion.x = motion.z = 0;
           setStick(null);
         }
@@ -179,7 +192,10 @@ function BusyFill() {
   }, [until]);
   if (!until) return null;
   const start = started ?? until - 3000,
-    share = Math.max(0, Math.min(1, (now - start) / Math.max(1, until - start)));
+    share = Math.max(
+      0,
+      Math.min(1, (now - start) / Math.max(1, until - start)),
+    );
   return (
     <span
       className="busy-fill"
@@ -207,7 +223,8 @@ export function ActionButton() {
     target = useStore(readSocialTarget),
     clock = useStore((s) => s.clock),
     policy = useStore((s) => s.mayor?.mayor?.policy),
-    panel = useStore((s) => s.panel);
+    panel = useStore((s) => s.panel),
+    [sending, setSending] = useState("");
   const room = position?.room,
     context = sim && position ? stationAction(sim, world, position) : undefined,
     station = context?.station,
@@ -330,7 +347,9 @@ export function ActionButton() {
         !s.panel &&
         !s.searchOpen &&
         p?.room &&
-        !useInteractions.getState().waiting.some((task) => task.kind === "door" && !task.enter)
+        !useInteractions
+          .getState()
+          .waiting.some((task) => task.kind === "door" && !task.enter)
       ) {
         enqueueAction({
           kind: "door",
@@ -500,6 +519,11 @@ export function ActionButton() {
         <span className="walk-target">Back to your city</span>
       </button>
     );
+  /** Only the pressed button shows the spinner; its neighbours go quiet and keep their size. */
+  const send = (kind: "wave" | "hangout" | "gift", id: string) => {
+    setSending(kind);
+    void meet(kind, id).finally(() => setSending(""));
+  };
   const busy = !!sim.busyUntil,
     giftReason =
       (clock?.msPerMinute ?? 1000) >= 1000 &&
@@ -518,22 +542,28 @@ export function ActionButton() {
         >
           <span aria-hidden="true">With {firstName}</span>
           <ReasonButton
-            onClick={() => meet("wave", person.id)}
-            reason={acting ? "Sending…" : ""}
+            onClick={() => send("wave", person.id)}
+            reason=""
+            pending={sending === "wave"}
+            quiet={acting}
             aria-label={`Wave to ${person.name}`}
           >
             Wave
           </ReasonButton>
           <ReasonButton
-            onClick={() => meet("hangout", person.id)}
-            reason={acting ? "Sending…" : ""}
+            onClick={() => send("hangout", person.id)}
+            reason=""
+            pending={sending === "hangout"}
+            quiet={acting}
             aria-label={`Hang out with ${person.name}`}
           >
             Hang out
           </ReasonButton>
           <ReasonButton
-            onClick={() => meet("gift", person.id)}
-            reason={acting ? "Sending your gift…" : giftReason}
+            onClick={() => send("gift", person.id)}
+            reason={acting ? "" : giftReason}
+            pending={sending === "gift"}
+            quiet={acting}
             aria-label={`Give ${person.name} a $25 gift`}
             title={giftReason || undefined}
           >
@@ -553,13 +583,7 @@ export function ActionButton() {
             More activities here
           </button>
         )}
-      {!busy &&
-      !acting &&
-      !door &&
-      !station &&
-      !person &&
-      !bench &&
-      !seated ? (
+      {!busy && !acting && !door && !station && !person && !bench && !seated ? (
         <button className="walk-interact primary is-idle" disabled>
           <span className="walk-target">
             {room
@@ -579,7 +603,9 @@ export function ActionButton() {
       ) : (
         <ReasonButton
           className="walk-interact primary"
-          reason={acting ? "Sending…" : reason && !canTalk ? reason : ""}
+          reason={!acting && reason && !canTalk ? reason : ""}
+          pending={acting && !sending}
+          quiet={acting}
           onClick={interact}
         >
           <span className="walk-target">{label}</span>

@@ -696,6 +696,39 @@
   color: var(--c-ink-soft);
   box-shadow: none;
 }
+/* In flight: the pressed control swaps its label for a spinner inside the same box;
+   its neighbours only go quiet, so the group never changes size. */
+.walk-social button[aria-busy="true"] {
+  position: relative;
+  color: transparent;
+  border-color: var(--need-social);
+  background: var(--need-social-tint);
+}
+.walk-social button[aria-busy="true"]::after,
+.walk-interact[aria-busy="true"]::after {
+  position: absolute;
+  margin: 0;
+  border-color: var(--c-ink-soft);
+  border-right-color: transparent;
+}
+.walk-social button[aria-busy="true"]::after {
+  inset: 0;
+  margin: auto;
+}
+.walk-interact[aria-busy="true"]::after {
+  top: 50%;
+  right: var(--s-3);
+  margin-top: -9px;
+  border-color: var(--c-on-primary);
+  border-right-color: transparent;
+}
+/* The pressed action keeps its colour while it is sent. */
+.walk-interact.primary[aria-busy="true"]:disabled {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  border-color: var(--c-primary-edge);
+  box-shadow: 0 4px 0 var(--c-primary-edge);
+}
 .walk-social button:has(.gate-reason) {
   flex-basis: 100%;
 }
@@ -1030,23 +1063,20 @@
     --hud-gap: var(--s-2);
     --hud-top: 76px;
     --hud-bottom: 72px;
-    /* Toasts rise from just above the dock, between the joystick and the action button,
-       where neither the cue column, the queue pill nor the event chip can reach them. */
-    --feedback-top: auto;
-    --feedback-bottom: calc(var(--hud-bottom) + var(--s-2));
-    /* centred between the joystick (left 120px) and the action stack, whose social row
-       reaches 235px in from the right edge */
-    --feedback-left: calc(50vw - 54px);
-    --feedback-shift: -50%;
-    --feedback-max-width: min(380px, calc(100vw - 374px));
-  }
-  .metro-hud:has(.walk-help) {
-    --feedback-bottom: calc(var(--hud-bottom) + var(--s-2) + 68px);
+    /* Toasts hang from the top-right edge, under the light and sound buttons and right of the vitals plate: the player sits
+       in the middle of the screen and the left edge belongs to the cue column and the joystick.
+       The stack shortens itself when the social row below it is open. */
+    --feedback-top: calc(max(var(--hud-gap), env(safe-area-inset-top)) + 50px);
+    --feedback-left: auto;
+    --feedback-right: max(var(--s-2), env(safe-area-inset-right));
+    --feedback-shift: 0;
+    --feedback-max-width: min(300px, calc(100vw - 424px));
   }
   /* a side sheet covers the right half; notices use the free strip on the left */
   .metro-hud.is-panel-open {
+    --feedback-top: var(--hud-top);
     --feedback-left: var(--s-2);
-    --feedback-shift: 0;
+    --feedback-right: auto;
     --feedback-max-width: calc(100vw - min(392px, 58vw) - 24px);
   }
   .cash-detail {
@@ -1062,16 +1092,12 @@
     width: calc(50vw - 16px);
   }
   /* During a shift the rhythm card says what is happening; the cue column, the event
-     chip and the dock step aside so toasts can rise above the card without covering anything. */
-  .metro-hud:has(.shift-timing) :is(.hud-left, .world-event-banner, .bottom-dock) {
+     chip and the dock step aside so nothing covers the card. */
+  .metro-hud:has(.shift-timing)
+    :is(.hud-left, .world-event-banner, .bottom-dock) {
     visibility: hidden;
     pointer-events: none;
   }
-  /* The shift rhythm card owns the bottom centre while it shows; toasts rise above it. */
-  .metro-hud:has(.shift-timing) {
-    --feedback-bottom: calc(var(--s-2) * 2 + var(--shift-card, 128px));
-  }
-
   /* vitals: one 60px strip */
   .vitals {
     gap: var(--s-2);
@@ -1144,6 +1170,22 @@
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  /* notices stop short of the player in the middle of the screen */
+  .hud-toasts > * {
+    max-width: calc(50vw - 40px);
+  }
+  /* the reconnect banner keeps its message and its button on a short card */
+  .reconnect-banner > svg,
+  .reconnect-banner .reconnect-saved {
+    display: none;
+  }
+  .reconnect-banner .secondary svg {
+    display: none;
+  }
+  /* on a phone the advice is the message; the pay note shows on larger screens */
+  .need-warning .need-pay {
+    display: none;
   }
   .hud-toasts > :nth-child(n + 3) {
     display: none;

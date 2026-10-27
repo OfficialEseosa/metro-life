@@ -135,7 +135,15 @@
 .start-city-silhouette i:nth-child(3) {
   height: 77px;
   background: #b69050;
-  clip-path: polygon(0 22%, 40% 22%, 50% 0, 60% 22%, 100% 22%, 100% 100%, 0 100%);
+  clip-path: polygon(
+    0 22%,
+    40% 22%,
+    50% 0,
+    60% 22%,
+    100% 22%,
+    100% 100%,
+    0 100%
+  );
 }
 .start-city-silhouette.nyc i {
   width: 33px;
