@@ -6,7 +6,7 @@ const GAIN: Record<Kind, number> = { wave: 2, hangout: 10, gift: 5 };
 
 test("f. wave, hang out and gift both ways", async ({ browser }, testInfo) => {
   // Two software-rendered pages share the machine and six moments each wait for the receiver.
-  test.setTimeout(40 * 60_000);
+  test.setTimeout(60 * 60_000);
   const a = await newPlayer(browser, testInfo);
   const b = await newPlayer(browser, testInfo);
   // Both quick starts arrive at the same spot outside Ponce Works Market, within reach of each other.
@@ -20,8 +20,11 @@ test("f. wave, hang out and gift both ways", async ({ browser }, testInfo) => {
     const label = kind === "wave" ? `Wave to ${name}` : kind === "hangout" ? `Hang out with ${name}` : `Give ${name} a $25 gift`;
     const button = from.getByRole("button", { name: label, exact: true });
     await expect(button).toBeVisible();
-    await expect(button).toBeEnabled();
-    await button.dispatchEvent("click");
+    const tap = async () => {
+      await expect(button).toBeEnabled();
+      await button.dispatchEvent("click");
+    };
+    await tap();
 
     const text =
       kind === "wave"
@@ -31,10 +34,14 @@ test("f. wave, hang out and gift both ways", async ({ browser }, testInfo) => {
           : `${sender.username} gave ${name} $25.`;
     const moved = (before: ServerSim, other: string) => (s: ServerSim | null) =>
       (s?.relationships[other]?.lastAt ?? 0) > (before.relationships[other]?.lastAt ?? 0);
-    const [senderAfter, targetAfter] = (await Promise.all([
-      poll(() => serverSim(from), moved(sender, target.userId), 240_000, 2000),
-      poll(() => serverSim(to), moved(target, sender.userId), 240_000, 2000),
-    ])) as ServerSim[];
+    let senderAfter = (await poll(() => serverSim(from), moved(sender, target.userId), 150_000, 2000)) as ServerSim;
+    // A page starved by software rendering can refuse the tap ("Finish what you are doing first")
+    // while its own last step is still being confirmed; tap again, as a player would.
+    for (let retry = 0; retry < 2 && !moved(sender, target.userId)(senderAfter); retry++) {
+      await tap();
+      senderAfter = (await poll(() => serverSim(from), moved(sender, target.userId), 150_000, 2000)) as ServerSim;
+    }
+    const targetAfter = (await poll(() => serverSim(to), moved(target, sender.userId), 60_000, 2000)) as ServerSim;
     for (const [before, after, other] of [
       [sender, senderAfter, target.userId],
       [target, targetAfter, sender.userId],
