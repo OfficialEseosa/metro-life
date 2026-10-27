@@ -438,8 +438,12 @@ export function ObjectPicking({
             person.position &&
             (person.position.room ?? null) === room,
         ),
-        residents = scene.getObjectByName("residents");
-      if (residents instanceof THREE.InstancedMesh && visible(residents)) {
+        crowds = ["residents", "residents-far"].map((name) =>
+          scene.getObjectByName(name),
+        );
+      for (const residents of crowds) {
+        if (!(residents instanceof THREE.InstancedMesh) || !visible(residents))
+          continue;
         const ids = residents.userData.ids as string[] | undefined;
         const pickable =
           (residents.userData.pickCount as number | undefined) ??
@@ -477,7 +481,8 @@ export function ObjectPicking({
             { x, z },
           );
         }
-      } else if (!residents) {
+      }
+      if (!crowds[0]) {
         for (const person of people) {
           const p = person.activitySlot ?? person.position!;
           addBox(

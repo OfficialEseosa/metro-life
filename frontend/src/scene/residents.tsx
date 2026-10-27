@@ -57,8 +57,10 @@ const LOOK_WITHIN = 4.5;
  * index (skin, hair, top, bottom, shoe, dark detail, eye white, trim), an arm flag and a long-hair
  * flag the crowd shader poses by.
  */
-function crowdFigure() {
+function crowdFigure(low = false) {
   const parts: THREE.BufferGeometry[] = [];
+  // The far version keeps the silhouette, colours and posing with fewer segments and no face.
+  const seg = (near: number, far: number) => (low ? far : near);
   const add = (
     g: THREE.BufferGeometry,
     part: number,
@@ -84,7 +86,7 @@ function crowdFigure() {
     parts.push(g);
   };
   add(
-    new THREE.SphereGeometry(0.112, 12, 8),
+    new THREE.SphereGeometry(0.112, seg(12, 8), seg(8, 5)),
     0,
     0,
     [0, 1.62, 0.005],
@@ -92,8 +94,8 @@ function crowdFigure() {
   );
   const hair = new THREE.SphereGeometry(
     0.122,
-    12,
-    4,
+    seg(12, 8),
+    seg(4, 3),
     0,
     Math.PI * 2,
     0,
@@ -101,50 +103,52 @@ function crowdFigure() {
   );
   hair.rotateX(-0.42);
   add(hair, 1, 0, [0, 1.64, -0.012], [0.96, 1.08, 1.04]);
-  add(
-    new THREE.SphereGeometry(1, 6, 3),
-    1,
-    0,
-    [0, 1.704, 0.085],
-    [0.058, 0.018, 0.022],
-  );
-  add(
-    new THREE.SphereGeometry(1, 6, 3),
-    6,
-    0,
-    [-0.04, 1.625, 0.106],
-    [0.026, 0.022, 0.009],
-  );
-  add(
-    new THREE.SphereGeometry(1, 6, 3),
-    6,
-    0,
-    [0.04, 1.625, 0.106],
-    [0.026, 0.022, 0.009],
-  );
-  add(
-    new THREE.SphereGeometry(1, 6, 3),
-    5,
-    0,
-    [-0.04, 1.625, 0.114],
-    [0.014, 0.016, 0.012],
-  );
-  add(
-    new THREE.SphereGeometry(1, 6, 3),
-    5,
-    0,
-    [0.04, 1.625, 0.114],
-    [0.014, 0.016, 0.012],
-  );
-  for (const side of [-1, 1])
+  if (!low) {
     add(
-      new THREE.BoxGeometry(0.05, 0.008, 0.012),
+      new THREE.SphereGeometry(1, 6, 3),
+      1,
+      0,
+      [0, 1.704, 0.085],
+      [0.058, 0.018, 0.022],
+    );
+    add(
+      new THREE.SphereGeometry(1, 6, 3),
+      6,
+      0,
+      [-0.04, 1.625, 0.106],
+      [0.026, 0.022, 0.009],
+    );
+    add(
+      new THREE.SphereGeometry(1, 6, 3),
+      6,
+      0,
+      [0.04, 1.625, 0.106],
+      [0.026, 0.022, 0.009],
+    );
+    add(
+      new THREE.SphereGeometry(1, 6, 3),
       5,
       0,
-      [side * 0.04, 1.663, 0.101],
-      [1, 1, 1],
-      side * 0.08,
+      [-0.04, 1.625, 0.114],
+      [0.014, 0.016, 0.012],
     );
+    add(
+      new THREE.SphereGeometry(1, 6, 3),
+      5,
+      0,
+      [0.04, 1.625, 0.114],
+      [0.014, 0.016, 0.012],
+    );
+    for (const side of [-1, 1])
+      add(
+        new THREE.BoxGeometry(0.05, 0.008, 0.012),
+        5,
+        0,
+        [side * 0.04, 1.663, 0.101],
+        [1, 1, 1],
+        side * 0.08,
+      );
+  }
   const longHair = new THREE.CapsuleGeometry(0.031, 0.25, 1, 4);
   add(longHair.clone(), 1, 0, [-0.078, 1.51, -0.075], [1, 1, 0.85], 0, true);
   add(longHair, 1, 0, [0.078, 1.51, -0.075], [1, 1, 0.85], 0, true);
@@ -156,9 +160,9 @@ function crowdFigure() {
   );
   const collar = new THREE.TorusGeometry(0.061, 0.008, 3, 6);
   collar.rotateX(Math.PI / 2);
-  add(collar, 7, 0, [0, 1.45, 0]);
+  if (!low) add(collar, 7, 0, [0, 1.45, 0]);
   add(
-    new THREE.CapsuleGeometry(0.145, 0.26, 2, 8),
+    new THREE.CapsuleGeometry(0.145, 0.26, seg(2, 1), seg(8, 6)),
     2,
     0,
     [0, 1.21, 0],
@@ -172,14 +176,14 @@ function crowdFigure() {
     [1, 1, 0.72],
   );
   add(
-    new THREE.CapsuleGeometry(0.135, 0.06, 1, 8),
+    new THREE.CapsuleGeometry(0.135, 0.06, 1, seg(8, 6)),
     3,
     0,
     [0, 0.96, 0],
     [1, 1, 0.72],
   );
   for (const side of [-1, 1]) {
-    add(new THREE.CapsuleGeometry(0.064, 0.74, 1, 6), 3, 0, [
+    add(new THREE.CapsuleGeometry(0.064, 0.74, 1, seg(6, 4)), 3, 0, [
       side * 0.082,
       0.5,
       0,
@@ -192,7 +196,7 @@ function crowdFigure() {
       [0.058, 0.048, 0.11],
     );
     add(
-      new THREE.CapsuleGeometry(0.047, 0.44, 1, 5),
+      new THREE.CapsuleGeometry(0.047, 0.44, 1, seg(5, 4)),
       2,
       1,
       [side * 0.205, 1.17, 0],
@@ -206,11 +210,12 @@ function crowdFigure() {
       [side * 0.232, 0.88, 0.01],
       [1, 1.25, 1],
     );
-    add(new THREE.SphereGeometry(0.014, 4, 2), 5, 0, [
-      side * 0.04,
-      1.625,
-      0.104,
-    ]);
+    if (!low)
+      add(new THREE.SphereGeometry(0.014, 4, 2), 5, 0, [
+        side * 0.04,
+        1.625,
+        0.104,
+      ]);
   }
   const geometry = mergeGeometries(parts)!;
   for (const g of parts) g.dispose();
@@ -222,6 +227,8 @@ const MAX_RIGGED = 12,
   PROMOTE_WITHIN = 26,
   DEMOTE_BEYOND = 34,
   MIN_DWELL = 2;
+/** Beyond this distance from the camera crowd figures use the low-detail model. */
+const FAR_CROWD = 32;
 const SEATED_SLOTS = new Set(["Sit", "Type", "Eat", "Sleep", "Lie"]);
 
 /** NPC looks are pure functions of the id; cache them so roster changes never rebuild actors. */
@@ -345,25 +352,39 @@ export function Residents() {
     // Per-person instance colours and phase, copied to whichever slot the person is drawn in.
     statics = useRef<{ phase: number; colours: THREE.Color[] }[]>([]),
     drawOrder = useRef(""),
+    farRef = useRef<THREE.InstancedMesh>(null),
     riggedScratch = useRef<
       { i: number; state: number; matrix: THREE.Matrix4 }[]
     >([]);
   const model = useMemo(() => {
-    const geometry = crowdFigure();
-    const states = new THREE.InstancedBufferAttribute(new Float32Array(48), 1),
-      phases = new THREE.InstancedBufferAttribute(new Float32Array(48), 1),
-      shirts = new THREE.InstancedBufferAttribute(new Float32Array(48 * 3), 3),
-      skins = new THREE.InstancedBufferAttribute(new Float32Array(48 * 3), 3),
-      hairs = new THREE.InstancedBufferAttribute(new Float32Array(48 * 3), 3),
-      bottoms = new THREE.InstancedBufferAttribute(new Float32Array(48 * 3), 3),
-      shoes = new THREE.InstancedBufferAttribute(new Float32Array(48 * 3), 3);
-    geometry.setAttribute("crowdState", states);
-    geometry.setAttribute("crowdPhase", phases);
-    geometry.setAttribute("shirtColor", shirts);
-    geometry.setAttribute("skinColor", skins);
-    geometry.setAttribute("hairColor", hairs);
-    geometry.setAttribute("bottomColor", bottoms);
-    geometry.setAttribute("shoeColor", shoes);
+    const instanceData = (geometry: THREE.BufferGeometry) => {
+      const states = new THREE.InstancedBufferAttribute(
+          new Float32Array(48),
+          1,
+        ),
+        phases = new THREE.InstancedBufferAttribute(new Float32Array(48), 1),
+        shirts = new THREE.InstancedBufferAttribute(
+          new Float32Array(48 * 3),
+          3,
+        ),
+        skins = new THREE.InstancedBufferAttribute(new Float32Array(48 * 3), 3),
+        hairs = new THREE.InstancedBufferAttribute(new Float32Array(48 * 3), 3),
+        bottoms = new THREE.InstancedBufferAttribute(
+          new Float32Array(48 * 3),
+          3,
+        ),
+        shoes = new THREE.InstancedBufferAttribute(new Float32Array(48 * 3), 3);
+      geometry.setAttribute("crowdState", states);
+      geometry.setAttribute("crowdPhase", phases);
+      geometry.setAttribute("shirtColor", shirts);
+      geometry.setAttribute("skinColor", skins);
+      geometry.setAttribute("hairColor", hairs);
+      geometry.setAttribute("bottomColor", bottoms);
+      geometry.setAttribute("shoeColor", shoes);
+      return { geometry, states, phases, shirts, skins, hairs, bottoms, shoes };
+    };
+    const near = instanceData(crowdFigure()),
+      far = instanceData(crowdFigure(true));
     const time = { value: 0 },
       material = new THREE.MeshStandardMaterial({
         roughness: 0.85,
@@ -416,18 +437,7 @@ export function Residents() {
     };
     material.userData.crowdTime = time;
     material.customProgramCacheKey = () => "metro-crowd-life-v7";
-    return {
-      geometry,
-      material,
-      states,
-      phases,
-      shirts,
-      skins,
-      hairs,
-      bottoms,
-      shoes,
-      time,
-    };
+    return { ...near, far, material, time };
   }, []);
   const crowd = useMemo(
     () =>
@@ -565,28 +575,34 @@ export function Residents() {
       lastHeight.current !== size.height;
     // Draw only the impostors in sight, packed at the front of the batch; people shown as rigged
     // actors follow them (not drawn, still pickable), and anyone clipped is left out entirely.
+    // Impostors further than FAR_CROWD from the camera draw the low-detail figure.
     let shown = 0,
+      shownFar = 0,
       rigged = 0;
     const order: string[] = [],
-      put = (n: number, i: number, state: number, matrix: THREE.Matrix4) => {
+      farOrder: string[] = [],
+      farMesh = farRef.current,
+      put = (
+        n: number,
+        i: number,
+        state: number,
+        matrix: THREE.Matrix4,
+        target: THREE.InstancedMesh = mesh,
+        data: typeof model.far = model,
+      ) => {
         const fixed = statics.current[i];
-        mesh.setMatrixAt(n, matrix);
-        model.states.setX(n, state);
+        target.setMatrixAt(n, matrix);
+        data.states.setX(n, state);
         if (!fixed) return;
-        model.phases.setX(n, fixed.phase);
-        [
-          model.shirts,
-          model.skins,
-          model.hairs,
-          model.bottoms,
-          model.shoes,
-        ].forEach((attribute, k) =>
-          attribute.setXYZ(
-            n,
-            fixed.colours[k].r,
-            fixed.colours[k].g,
-            fixed.colours[k].b,
-          ),
+        data.phases.setX(n, fixed.phase);
+        [data.shirts, data.skins, data.hairs, data.bottoms, data.shoes].forEach(
+          (attribute, k) =>
+            attribute.setXYZ(
+              n,
+              fixed.colours[k].r,
+              fixed.colours[k].g,
+              fixed.colours[k].b,
+            ),
         );
       };
     for (let i = 0; i < crowd.length; i++) {
@@ -694,8 +710,13 @@ export function Residents() {
         slot.matrix.copy(dummy.matrix);
       } else if (Math.abs(point.x) < 1.2 && Math.abs(point.y) < 1.3) {
         // Impostors cast no shadow, so one outside the view is simply not drawn.
-        put(shown++, i, crowdState, dummy.matrix);
-        order.push(person.id);
+        if (farMesh && camera.position.distanceTo(dummy.position) > FAR_CROWD) {
+          put(shownFar++, i, crowdState, dummy.matrix, farMesh, model.far);
+          farOrder.push(person.id);
+        } else {
+          put(shown++, i, crowdState, dummy.matrix);
+          order.push(person.id);
+        }
       }
     }
     for (let r = 0; r < rigged; r++) {
@@ -705,17 +726,23 @@ export function Residents() {
     }
     mesh.count = shown;
     mesh.userData.pickCount = shown + rigged;
-    const signature = order.join(",");
+    if (farMesh) {
+      farMesh.count = shownFar;
+      farMesh.userData.pickCount = shownFar;
+    }
+    const signature = order.join(",") + "|" + farOrder.join(",");
     if (signature !== drawOrder.current) {
       drawOrder.current = signature;
       mesh.userData.ids = order;
-      model.phases.needsUpdate =
-        model.shirts.needsUpdate =
-        model.skins.needsUpdate =
-        model.hairs.needsUpdate =
-        model.bottoms.needsUpdate =
-        model.shoes.needsUpdate =
-          true;
+      if (farMesh) farMesh.userData.ids = farOrder;
+      for (const data of [model, model.far])
+        data.phases.needsUpdate =
+          data.shirts.needsUpdate =
+          data.skins.needsUpdate =
+          data.hairs.needsUpdate =
+          data.bottoms.needsUpdate =
+          data.shoes.needsUpdate =
+            true;
       changed = true;
     }
     // Rigged actors near the player, with hysteresis: promote inside 26 m, keep until 34 m,
@@ -794,11 +821,17 @@ export function Residents() {
       lastHeight.current = size.height;
       mesh.instanceMatrix.needsUpdate = model.states.needsUpdate = true;
       mesh.computeBoundingSphere();
+      if (farMesh) {
+        farMesh.instanceMatrix.needsUpdate =
+          model.far.states.needsUpdate = true;
+        farMesh.computeBoundingSphere();
+      }
     }
   });
   useEffect(
     () => () => {
       model.geometry.dispose();
+      model.far.geometry.dispose();
       model.material.dispose();
     },
     [model],
@@ -811,6 +844,13 @@ export function Residents() {
         ref={ref}
         args={[model.geometry, model.material, 48]}
         count={crowd.length}
+        raycast={() => {}}
+      />
+      <instancedMesh
+        name="residents-far"
+        ref={farRef}
+        args={[model.far.geometry, model.material, 48]}
+        count={0}
         raycast={() => {}}
       />
       {crowd
