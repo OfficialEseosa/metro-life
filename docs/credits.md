@@ -18,6 +18,7 @@ Fonts/code are separate from the 3D art: Fredoka and Nunito (SIL OFL 1.1, see th
 | `chars/f_street.glb` | [Quaternius](https://quaternius.com/packs/ultimatemodularwomen.html) | CC0 1.0 |
 | `chars/f_work.glb` | [Quaternius](https://quaternius.com/packs/ultimatemodularwomen.html) | CC0 1.0 |
 | `chars/m_casual.glb` | [Quaternius](https://quaternius.com/packs/ultimatemodularcharacters.html) | CC0 1.0 |
+| `chars/UAL1-LICENSE.txt`, `chars/UAL2-LICENSE.txt` | Licence notices of the Quaternius Universal Animation Library 1 and 2 ([quaternius.com](https://quaternius.com)), retargeted by `scripts/retarget-activities.mjs` into `chars/activities-f.bin` and `chars/activities-m.bin` | CC0 1.0 |
 | `chars/m_casual2.glb` | [Quaternius](https://quaternius.com/packs/ultimatemodularcharacters.html) | CC0 1.0 |
 | `chars/m_party.glb` | [Quaternius](https://quaternius.com/packs/ultimatemodularcharacters.html) | CC0 1.0 |
 | `chars/m_smart.glb` | [Quaternius](https://quaternius.com/packs/ultimatemodularcharacters.html) | CC0 1.0 |

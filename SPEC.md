@@ -139,8 +139,9 @@ a visible saving/sending explanation. Homes display resident counts and missing 
   Active worlds simulate movement every 45–96 seconds after staggered initial departures. Residents use
   a limited activity routine, rather than the full human career/story loop. Up to three residents per city
   vote once per term when a human candidate exists; up to two lease one-cell plots. They do not run for
-  office or buy billboards. At most one synthetic chat message per city every two real minutes. Worlds
-  stop simulating five minutes after their last read/live connection; no offline simulation catch-up.
+  office or buy billboards. Residents speak at most once per city every 4 to 7
+  real minutes (picked at random), only after a player message or into an empty room, and never repeat a line
+  from the city's last 30 resident lines. Worlds stop simulating five minutes after their last read/live connection; no offline simulation catch-up.
 - **Plots**: rectangles of 1–12 cells in each dimension, $35 per cell for seven game days, with atomic
   bounds/overlap validation. One generated atlas PNG per city/world; no per-cell meshes or image requests.
   Booking is immediate under the server lock, so `holds` is empty. Titles use 3–48 plain-text characters;
@@ -287,7 +288,7 @@ Newly started browser lives opt their shared world into a seven-minute day (`Clo
 ## Pacing, first day and flows (2026-10-25)
 
 - **Money for a new life.** Starting cash is $150. Starter studios cost $15 (Atlanta), $22 (New York) and $25
-  (Bay Area) per game day and are prepaid for the first two game days; other neighbourhoods cost $40 to $110.
+  (Bay Area) per game day and are prepaid for the first two game days; other neighbourhoods cost a share of one entry shift (36 / 42 / 50 / 60 / 72 percent). Atlanta: $25 / $29 / $35 / $42 / $50. New York: $36 / $42 / $50 / $60 / $72. Bay Area: $40 / $46 / $55 / $66 / $79. `sim.economy.forecast.homes` lists each home's daily net after one shift and two meals out, and `forecast.upgrade` names the cheapest sustainable dearer home.
   Plane fares are $120 (Atlanta and New York), $160 (Atlanta and Bay Area) and $170 (New York and Bay Area);
   a bus costs a quarter. Starting cash covers a first flight, and about two entry shifts ($70 each in Atlanta)
   pay for the next one.

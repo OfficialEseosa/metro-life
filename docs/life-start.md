@@ -12,10 +12,12 @@ The server owns six durable flags: leave home, accept an entry job at its workpl
 
 ## A tight start with a way forward
 
-- Studio rent: $35 per game day. Basic cafe meal: $12. Free pantry cooking, sleep, shower and a call from the chair remain available at home.
-- Career shifts: $70 / $100 / $140 / $190 / $250 by level. A low-mood entry shift pays $49, covering rent and a cafe meal ($47). Non-career paid activities pay $22 before mood/policy modifiers. Daily goals pay $5.
+- Studio rent per game day: $15 in Atlanta, $22 in New York, $25 in the Bay Area. Basic cafe meal: $12. Two meals out cost about $24 a day. Free pantry cooking, sleep, shower and a call from the chair remain available at home.
+- Neighbourhood homes are priced as a share of one entry shift (36 / 42 / 50 / 60 / 72 percent), so one shift a day can carry the first few. Atlanta: Midtown studio $15, then Buckhead $25, Old Fourth Ward $29, East Atlanta $35, West End $42, Decatur $50. New York: $22, then $36 / $42 / $50 / $60 / $72. Bay Area: $25, then $40 / $46 / $55 / $66 / $79.
+- The server's budget lists each home's daily net (one healthy shift, minus rent, minus two meals out) and suggests the cheapest dearer home that still saves at least $10 or 15 percent of a shift. The move review and the neighbourhood cards show it, and the first-day cue only names a home to save for when one is suggested.
+- Career shifts: $70 / $100 / $140 / $190 / $250 by level (Atlanta; New York and the Bay Area pay a little more, $100 and $110 at entry level). A low mood pays 85 percent of a shift and a rough one 70 percent, so an Atlanta entry shift still covers studio rent and two meals out. Non-career paid activities pay $22 before mood/policy modifiers. Daily goals pay $5.
 - Entry workplaces run staffed day/night rotas. Policies that extend closing hours cannot shorten an all-day rota. Other venues keep their own hours.
-- Offline rent uses the existing six-hour eligible window and the policy at each midnight. Starter arrears stop at two instalments ($70), and automatic collection leaves $12 for a meal. No foreclosure or negative-cash loop is introduced.
+- Offline rent uses the existing six-hour eligible window and the policy at each midnight. Starter arrears stop at two instalments (twice the studio rent), and automatic collection leaves $12 for a meal. No foreclosure or negative-cash loop is introduced.
 - Casual/street are owned. A job unlocks work clothes; party costs $90 and smart costs $120 once each. Changing while busy or in a story is refused.
 - Gifts and voting require one game day of age. Gifts received are capped at $50 per game day. Plots ($35 per cell / seven days) and billboards ($300 / three days) unlock after the teaching goals. Moving to a normal neighbourhood home costs its listed daily rent upfront.
 
