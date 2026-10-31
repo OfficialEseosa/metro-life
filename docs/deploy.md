@@ -53,6 +53,8 @@ fly volumes create metro_data --size 1
 
 In `fly.toml` mount the volume (`[mounts] source = "metro_data"`, `destination = "/data"`), set `internal_port = 8080`, and keep one machine (`fly scale count 1`). Set the allow-list with `fly secrets set METRO_ORIGINS=https://your-game.vercel.app`, then `fly deploy`.
 
+Deploying from a Windows checkout works because the image normalises the line endings of the entrypoint script. If a host still reports "No such file or directory" for the entrypoint, run `git config core.autocrlf false` and re-clone.
+
 ### Koyeb
 
 Create a service from the Git repository with the Dockerfile builder, Dockerfile `backend/Dockerfile`, work directory the repository root, port 8080, one instance, and the `METRO_ORIGINS` variable. Attach a volume at `/data` where your plan allows it; otherwise the save file is lost on redeploy.

@@ -1,0 +1,13 @@
+* text=auto
+*.sh text eol=lf
+backend/mvnw text eol=lf
+Dockerfile text eol=lf
+*.toml text eol=lf
+*.glb binary
+*.bin binary
+*.png binary
+*.webp binary
+*.jpg binary
+*.mp3 binary
+*.woff2 binary
+*.ttf binary
