@@ -28,7 +28,27 @@ import { roomFloorHeight } from "./venue-zones";
 import { roomView, streetView } from "./room-camera";
 import { lyingHipHeight } from "./furniture-models";
 import { COOK_POT } from "./characters/actor";
-import type { CityId } from "../api/types";
+import type { ActivitySlot, CityId } from "../api/types";
+
+/**
+ * Shortest time an action's pose stays on screen once the body reaches it. A short action can
+ * settle on the server before a slow device has walked the body to its spot; the pose then plays
+ * out locally, without delaying the server's completion or the reward.
+ */
+const MIN_POSE_MS = 1200;
+/** Longest an action that ended mid-walk keeps its spot and pose while the body gets there. */
+const MAX_POSE_CATCH_UP_MS = 3000;
+type HeldPose = {
+  key: string;
+  room: string | null;
+  busyUntil: number;
+  slot: ActivitySlot | null;
+  pose: CharacterPose;
+  /** performance.now() when the pose first showed, 0 while still walking to it */
+  shownAt: number;
+  /** performance.now() when the server ended the action, 0 while it runs */
+  endedAt: number;
+};
 
 /**
  * Hip height on a slot. A bed's own model decides how high a sleeper lies, so the body rests on
@@ -113,7 +133,8 @@ export function Walking({
     renderedSpeed = useRef(0),
     stagedPose = useRef<CharacterPose>("Idle"),
     hip = useRef<number | undefined>(undefined),
-    socialUntil = useRef(0);
+    socialUntil = useRef(0),
+    heldPose = useRef<HeldPose | null>(null);
   const activityPath = useRef<{ x: number; z: number }[]>([]),
     lastSlot = useRef(""),
     stage = useRef<StageSlot | null>(null),
@@ -393,7 +414,43 @@ export function Walking({
     const elapsed = Math.min(dt, 0.5);
     motion.walkClock += elapsed;
     const s = useStore.getState(),
-      blocked =
+      live = s.sim ?? sim,
+      clock = performance.now(),
+      manual = Math.hypot(motion.x, motion.z) > 0;
+    // Remember the running action's spot and pose, so a short one still shows when it ends early.
+    if (live.busyUntil && !activeLifeAction(live)) {
+      const key = String(live.busyStartedAt ?? live.busyUntil),
+        held = heldPose.current;
+      if (held?.key !== key || held.endedAt)
+        heldPose.current = {
+          key,
+          room: motion.position.room ?? null,
+          busyUntil: live.busyUntil,
+          slot: live.activitySlot ?? null,
+          pose: visiblePose(live),
+          shownAt: 0,
+          endedAt: 0,
+        };
+      else {
+        held.slot = live.activitySlot ?? held.slot;
+        held.pose = visiblePose(live);
+      }
+    } else if (heldPose.current && !heldPose.current.endedAt)
+      heldPose.current.endedAt = clock;
+    const held = heldPose.current,
+      hold =
+        held?.endedAt &&
+        !manual &&
+        !live.busyUntil &&
+        held.room === (motion.position.room ?? null) &&
+        (held.shownAt
+          ? clock - held.shownAt < MIN_POSE_MS
+          : clock - held.endedAt < MAX_POSE_CATCH_UP_MS)
+          ? held
+          : null;
+    if (held?.endedAt && !hold) heldPose.current = null;
+    if (hold) invalidate();
+    const blocked =
         useHomeDesign.getState().open ||
         s.sim?.introDone === false ||
         !!(s.sim?.firstDay?.complete && !s.sim.firstDay.closingSeen) ||
@@ -401,9 +458,9 @@ export function Walking({
         !!s.sim?.busyUntil ||
         !!s.sim?.pendingBeat ||
         !!s.panel ||
-        s.searchOpen,
+        s.searchOpen ||
+        !!hold,
       p = motion.position,
-      manual = Math.hypot(motion.x, motion.z) > 0,
       auto = interactionSteering(performance.now(), manual),
       axis = manual ? { x: motion.x, z: motion.z } : auto,
       length = Math.hypot(axis.x, axis.z),
@@ -475,11 +532,13 @@ export function Walking({
       invalidate();
     }
     const at = motion.position,
-      slot = moving ? null : s.sim?.activitySlot,
-      slotKey = slot ? `${at.room}:${slot.id}:${s.sim?.busyUntil ?? ""}` : "";
+      slot = moving ? null : (s.sim?.activitySlot ?? hold?.slot),
+      slotKey = slot
+        ? `${at.room}:${slot.id}:${s.sim?.busyUntil ?? hold?.busyUntil ?? ""}`
+        : "";
     if (slotKey !== lastSlot.current) {
       stage.current = slot
-        ? stagedSlot(city, at.room, slot, visiblePose(s.sim ?? sim))
+        ? stagedSlot(city, at.room, slot, hold?.pose ?? visiblePose(live))
         : null;
       if (slot && at.room) {
         const type = roomType(at.room)!,
@@ -549,7 +608,7 @@ export function Walking({
       groundY.current = 0.36;
     if (!at.room) groundY.current = groundHeight(scene, city, at.x, at.z);
     // Activity effects (steam, spray, Zs) are drawn by scene/activity.tsx for everyone.
-    const busy = !!sim.busyUntil;
+    const busy = !!sim.busyUntil || !!hold;
     if (busy) {
       phase.current += Math.min(dt, 0.05) * 5;
       invalidate();
@@ -595,17 +654,29 @@ export function Walking({
           ? "Idle"
           : staging
             ? "Idle"
-            : activeLifeAction(s.sim ?? sim)
-              ? visiblePose(s.sim ?? sim)
-              : busy
-                ? visiblePose(s.sim ?? sim)
-                : ((slot?.pose as CharacterPose) ??
+            : activeLifeAction(live)
+              ? visiblePose(live)
+              : hold && !live.busyUntil
+                ? hold.pose
+                : busy
+                  ? visiblePose(live)
+                  : ((slot?.pose as CharacterPose) ??
                   (performance.now() < socialUntil.current &&
                   s.socialNotice.includes(sim.username)
                     ? s.socialNotice.includes("waved")
                       ? "Wave"
                       : "Talk"
                     : "Idle"));
+    // The minimum pose time counts from when the body is in place and posing, not from the start.
+    if (
+      heldPose.current &&
+      !heldPose.current.shownAt &&
+      speed <= 0.08 &&
+      !staging &&
+      !turningToSlot &&
+      (live.busyUntil || hold)
+    )
+      heldPose.current.shownAt = clock;
     if (import.meta.env.DEV)
       (window as unknown as { __metroPlayer?: unknown }).__metroPlayer = {
         pose: stagedPose.current,
