@@ -76,12 +76,18 @@
 
 @media (max-width: 760px), (max-height: 520px) {
   .life-start {
-    padding: var(--s-2);
+  padding: max(var(--s-2), env(safe-area-inset-top))
+    max(var(--s-2), env(safe-area-inset-right))
+    max(var(--s-2), env(safe-area-inset-bottom))
+    max(var(--s-2), env(safe-area-inset-left));
   }
   .intro-story {
     align-items: center;
     justify-content: flex-end;
-    padding: var(--s-2);
+  padding: max(var(--s-2), env(safe-area-inset-top))
+    max(var(--s-2), env(safe-area-inset-right))
+    max(var(--s-2), env(safe-area-inset-bottom))
+    max(var(--s-2), env(safe-area-inset-left));
     background: linear-gradient(90deg, transparent 30%, var(--c-scrim));
   }
   .intro-story section {

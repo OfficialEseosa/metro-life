@@ -1,3 +1,4 @@
+import { holdDayTheme, setNightTheme } from "./theme";
 import "./hud.css";
 import type { Clock } from "../api/types";
 import { useHudUi } from "./hud-ui";
@@ -338,7 +339,7 @@ function TopControls() {
     home = useStore((s) => s.sim?.city),
     theme = useStore((s) => s.sceneTheme);
   useEffect(() => {
-    document.documentElement.dataset.time = night ? "night" : "day";
+    setNightTheme(night);
   }, [night]);
   return (
     <div className="hud-controls">
@@ -954,6 +955,15 @@ function HudBody() {
   useGameFeedback();
   useHudLayout(panel, search && !panel);
   useSimRefresh(view.simId, view.worldId);
+  const startScreen =
+    connection === "ended" ||
+    connection === "blocked" ||
+    !ready ||
+    !hasWorld ||
+    !hasUser ||
+    !view.hasSim ||
+    !view.introDone;
+  useEffect(() => (startScreen ? holdDayTheme() : undefined), [startScreen]);
   const openSearch = () => {
     state().openPanel(null);
     state().setSearchOpen(true);

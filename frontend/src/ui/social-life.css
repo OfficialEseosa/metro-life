@@ -482,10 +482,13 @@
   }
 
   .quick-start-shell {
-    padding: var(--s-2);
+  padding: max(var(--s-2), env(safe-area-inset-top))
+    max(var(--s-2), env(safe-area-inset-right))
+    max(var(--s-2), env(safe-area-inset-bottom))
+    max(var(--s-2), env(safe-area-inset-left));
   }
   .quick-start-shell > .quick-start {
-    max-height: calc(100dvh - 16px);
+    max-height: 100%;
     padding: var(--s-3) var(--s-4);
     border-radius: var(--r-lg);
   }

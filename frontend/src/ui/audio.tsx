@@ -1,3 +1,4 @@
+import { setNightTheme } from "./theme";
 import {
   Component,
   useEffect,
@@ -106,7 +107,7 @@ function AudioSceneContent() {
               ? "waterfront"
               : "street";
   useEffect(() => {
-    document.documentElement.dataset.time = night ? "night" : "day";
+    setNightTheme(night);
   }, [night]);
   useEffect(() => {
     setAudioScene({
