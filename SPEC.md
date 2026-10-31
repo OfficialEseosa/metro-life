@@ -63,15 +63,17 @@ a visible saving/sending explanation. Homes display resident counts and missing 
 - **NPC residents**: server-driven sims that vote, buy plots, visit landmarks, chat a little and can be interacted
   with. The shared world seeds 40 per city. Same data shape as players, flagged `npc: true`.
 - **Clock**: per world. The shared world runs a seven-minute day (`Clock.msPerMinute` about 292, so one game
-  hour is about 17.5 real seconds). Landmark opening hours use it. Days roll over at 00:00: rent is charged,
-  daily goals reset.
+  hour is about 17.5 real seconds). Landmark opening hours use it. Days roll over at 00:00 and daily goals
+  reset; rent falls due at every third midnight (`Content.RENT_EVERY_DAYS`, about 21 real minutes).
 
 ## Gameplay rules (backend is authoritative)
 
 - **Needs** `energy, hunger, fun, social, hygiene` in 0..100, always present on `Sim.needs`. They decay per game
-  hour: energy 0.45, hunger 0.55, fun 0.42, social 0.36, hygiene 0.4 (with personality modifiers; the table is
-  `Content.NEED_RATES` and is published as `economy.ratesPerGameHour`). At the seven-minute day a full need lasts
-  well over half an hour of real play. Offline decay is capped at six game hours so nobody returns to a dead sim.
+  hour: energy 0.2, hunger 0.24, fun 0.18, social 0.16, hygiene 0.18 (with personality modifiers; the table is
+  `Content.NEED_RATES` and is published as `economy.ratesPerGameHour`). An hour of real play is about 8.6 game
+  days, so an idle new life (every need at 85) still has every need above the red line (25) after an hour;
+  hunger, the fastest, reaches it after about 70 real minutes. Activities, not the clock, are the main way needs
+  move. Offline decay is capped at six game hours so nobody returns to a dead sim.
   Hygiene is a full need: the home shower restores it (+65, more with a better shower or tub), shifts and gigs
   cost a little (-6 to -8) and exercise costs more (-10); below 20 the sim shows the "dirty" condition.
   `mood` is derived from all five needs: `great | good | okay | low | rough`. Low mood reduces pay and skill
@@ -106,7 +108,7 @@ a visible saving/sending explanation. Homes display resident counts and missing 
   non-job activity back at the story landmark. The public sim `stories` journal records completed chapters,
   `choice|waiting|complete` status and `canContinue`; departure and reward guards persist privately.
 - **Money**: starting cash from `shared/world.json`. Income: shifts, gigs, story wins, plots resale later.
-  Sinks: food, fun, rent (per neighborhood, daily), flights between cities (airport action), plots, billboards.
+  Sinks: food, fun, rent (per neighborhood, every third game day), flights between cities (airport action), plots, billboards.
   `moneyToday: { income, spent }` records settled action income (including goal rewards) and costs for the
   current game day, excluding starting cash. It resets with daily goals; future money routes must update it.
 - **Travel**: flying is an action at the airport landmark of the current city; it costs cash and moves the sim.
@@ -119,7 +121,7 @@ a visible saving/sending explanation. Homes display resident counts and missing 
   canonical Campaign activity adds one support vote at completion, at most once per game day. Policies may
   be chosen once per term and end with the term: transit makes non-flight airport rides free; parks extend
   to midnight; smallbiz adds 5% work pay; arts extends culture hours to midnight and removes after-18:00
-  non-job costs; housing cuts daily rent by 20%; nightlife extends hours to 04:00. Announcements are plain
+  non-job costs; housing cuts rent by 20%; nightlife extends hours to 04:00. Announcements are plain
   text, 3–140 characters, without links, at most once per game hour.
 - **Social**: both residents must be at the same public location (private homes are separate) in the same city/world and free of activities or
   story choices. Human targets must be online. Wave gives both +3 Social; hang out gives both +15, capped
@@ -149,9 +151,12 @@ a visible saving/sending explanation. Homes display resident counts and missing 
 - **Billboards**: $300 for three game days, exclusive sequential bookings, maximum four outstanding per
   slot. A resident cannot book the same slot twice while a booking is active/queued. Response `ad.startsAt`
   discloses a future booking; reads expose current ad, queued count and the next available timestamp.
-- **Homes and rent**: moving requires being in the destination city and costs one day's rent, shown before
-  acceptance. Daily rent first falls due at the next midnight. A new life's starter studio is prepaid for its
-  first two game days (`home.rentPaidThrough`), so an idle new player loses nothing for about fourteen minutes. Unpaid amounts persist as public `rentDebt`;
+- **Homes and rent**: a home's listed `rent` is charged once every three game days (`Content.RENT_EVERY_DAYS`),
+  at the midnight after `home.rentPaidThrough`, the last day already covered; each charge covers that day and the
+  next two. Moving requires being in the destination city and costs one rent payment, shown before acceptance;
+  it covers the day of the move and the next two. A new life's starter studio is prepaid for the same three
+  days, so an idle new player pays nothing for at least fourteen real minutes. An idle real hour charges two or
+  three rents: an Atlanta starter keeps $105 to $120 of its $150. Unpaid amounts persist as public `rentDebt`;
   available funds repay them automatically without making cash negative. Accepted activity costs are reserved
   while rent settles. Purchases, move fees and actual rent payments update `moneyToday.spent`; aspiration
   rewards update income. All civic and property mutations require a sim and no pending activity/story.
@@ -177,7 +182,7 @@ Reads accept `?city=atl|nyc|bay` where noted (default: the sim's city, else `atl
 | POST | `/api/sim/outfit` | `{ style: "casual"\|"street"\|"smart"\|"work"\|"party", confirm? }` → `{ sim, clock }` (changes the worn outfit; casual and street are free, smart and party are bought once for $120 and $90 and need `confirm`, work needs a job; 409 mid-activity, 402 without cash) |
 | POST | `/api/intro/complete` | no body → `{ sim, clock }` (marks the opening walk-through done and steps the player through the home door; safe to repeat) |
 | POST | `/api/first-day/complete` | no body → `{ sim, clock }` (records that the first-day closing card was seen; 409 until all six first-day goals are complete) |
-| POST | `/api/home/rent` | no body → `{ sim, clock }` (pays the first rent from home, which covers the next midnight and completes that first-day goal; 409 if already paid, outside the home or mid-activity, 402 without cash) |
+| POST | `/api/home/rent` | no body → `{ sim, clock }` (pays the first rent from home, which covers the next three game days and completes that first-day goal; 409 if already paid, outside the home or mid-activity, 402 without cash) |
 | GET | `/api/sim` | `{ sim, clock }` (applies decay up to now) |
 | POST | `/api/act` | `{ city, loc, action, slotId? }` → `{ sim, result: ActResult }` |
 | POST | `/api/action/cancel` | no body → `{ sim, clock }` |
@@ -240,8 +245,8 @@ No emoji in UI, scene, seeded data, generated images, NPC chat or story text. Ic
 
 ## Rule clarifications
 - Explore daily goals count distinct city/place pairs completed on that game day, independently of lifetime exploration.
-- Offline need decay and rent catch-up cover the first six game hours since the last update (six real minutes at the canonical clock rate). Only midnights in that capped interval charge rent. Recorded housing-policy changes and term boundaries determine the rate at each midnight. Policy dates before this migration cannot be reconstructed; legacy saves begin with their known current policy as the baseline.
-- A life must be at least one game day old (24 real minutes) to send cash gifts or cast a ballot. Waves, chat and activities remain immediate. New sims expose authoritative createdAt; legacy sims fall back to browser-guest creation time.
+- Offline need decay and rent catch-up cover the first six game hours since the last update (about 105 real seconds at the canonical clock rate). Only rent midnights in that capped interval charge rent. Recorded housing-policy changes and term boundaries determine the rate at each midnight. Policy dates before this migration cannot be reconstructed; legacy saves begin with their known current policy as the baseline.
+- On a real-time clock a life must be at least one game day old to send cash gifts or cast a ballot; the shared seven-minute day skips this wait. Waves, chat and activities remain immediate. New sims expose authoritative createdAt; legacy sims fall back to browser-guest creation time.
 - Job applications require the sim's actual location to be the open workplace, with no activity or story pending. The job listing's Visit workplace action takes two seconds, gives no XP or cash itself, and cannot trigger a story; Apply then hires in place. It uses normal authoritative activity/travel validation.
 - A campaign consumes its accepted game day even if it settles after midnight. Election wins are credited only when that term's winner is actually seated.
 - Read endpoints apply due simulation state in memory without fsync. Explicit mutations persist immediately; active worlds checkpoint every five seconds and at orderly shutdown. Accepted activity outcomes are durable before a response and replay once after a crash. Visit statistics are process-memory counters; online stats count current authenticated human users. Story chapter/total counts are separate from titles (optional on legacy saved beats).
@@ -288,7 +293,7 @@ Newly started browser lives opt their shared world into a seven-minute day (`Clo
 ## Pacing, first day and flows (2026-10-25)
 
 - **Money for a new life.** Starting cash is $150. Starter studios cost $15 (Atlanta), $22 (New York) and $25
-  (Bay Area) per game day and are prepaid for the first two game days; other neighbourhoods cost a share of one entry shift (36 / 42 / 50 / 60 / 72 percent). Atlanta: $25 / $29 / $35 / $42 / $50. New York: $36 / $42 / $50 / $60 / $72. Bay Area: $40 / $46 / $55 / $66 / $79. `sim.economy.forecast.homes` lists each home's daily net after one shift and two meals out, and `forecast.upgrade` names the cheapest sustainable dearer home.
+  (Bay Area) every three game days, and the first three days are prepaid; other neighbourhoods cost a share of one entry shift (36 / 42 / 50 / 60 / 72 percent) for the same three days. Atlanta: $25 / $29 / $35 / $42 / $50. New York: $36 / $42 / $50 / $60 / $72. Bay Area: $40 / $46 / $55 / $66 / $79. `sim.economy.forecast` carries `rent`, `rentEveryDays`, `nextRentDay` and `nextRentAt`; `forecast.homes` lists each home's average net per game day (one shift, minus a third of the rent, minus two meals out), and `forecast.upgrade` names the cheapest sustainable dearer home.
   Plane fares are $120 (Atlanta and New York), $160 (Atlanta and Bay Area) and $170 (New York and Bay Area);
   a bus costs a quarter. Starting cash covers a first flight, and about two entry shifts ($70 each in Atlanta)
   pay for the next one.
@@ -297,7 +302,7 @@ Newly started browser lives opt their shared world into a seven-minute day (`Clo
   still finish activities there (`Civic.openFor`). A closed place answers "<Name> is closed right now. It opens
   at HH:00."
 - **First day.** `firstDay.complete` needs outside, job, shift, meal and neighbour (about ten minutes of play).
-  The rent step starts done because the first two days are prepaid. `firstDay.remaining` is the ready-made
+  The rent step starts done because the first three days are prepaid. `firstDay.remaining` is the ready-made
   disabled reason for plots, billboards and moving home, which unlock with `complete`.
 - **Stories.** Any ordinary activity at a story landmark (not a shift or the workplace visit) opens that story's
   first beat when the activity finishes; there is no first-day gate. `Sim.storyLead` names the next story in the

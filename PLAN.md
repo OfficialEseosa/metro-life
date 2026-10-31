@@ -6,6 +6,8 @@ Playable: quick start or the full creator, arrival, walking, jobs and shifts, ne
 
 Second round of fixes has landed: one-time live frames (waves, gifts, chat, events) are durable and no longer lost when a page falls behind, home furniture is preloaded, poses are fixed, the economy is rebalanced so one shift a day can carry the first few homes, and the phone social row and toasts are fixed.
 
+Pacing: rent is now taken every third game day and needs fall at less than half the old rate, so an idle hour leaves a new life with most of its cash and every need out of the red.
+
 Verified on this build: the seven Playwright journeys (first start, resume after reload, two players, outage and reconnect, paid shift, two-way social visit, flight) pass at 1366x768 and at 667x375 with touch. The frontend builds and lints with no errors and the backend packages as an API-only JAR. Nothing is hosted yet; the manual steps are in `docs/deploy.md`.
 
 Independent play review against The Sims 4, Animal Crossing, Two Point Hospital and Tiny Glade, scored out of 10. It was played on a software renderer at both viewports, and all 14 end-to-end journeys passed (7 journeys times 2 viewports). Overall about 7.1 out of 10 against a target of 8.5.
@@ -16,11 +18,10 @@ Independent play review against The Sims 4, Animal Crossing, Two Point Hospital 
 
 ## Next
 
-1. Slow the clock or the rent so an idle player is not drained: a seven-minute day with rent each midnight takes a new life from $150 to about $12 in 75 minutes.
-2. Host one API with a volume and create the Vercel project with root `frontend`, then set `VITE_API_URL` and `METRO_ORIGINS`.
-3. Listen to the mix on speakers. Levels were set by measurement; the coin cue sits about 4 dB over the bed rather than 6.
-4. Load the title-screen character preview lazily, so the title paints before three.js loads, especially on phones.
-5. Check rendering and frame rate on a real GPU and phone.
+1. Host one API with a volume and create the Vercel project with root `frontend`, then set `VITE_API_URL` and `METRO_ORIGINS`.
+2. Listen to the mix on speakers. Levels were set by measurement; the coin cue sits about 4 dB over the bed rather than 6.
+3. Load the title-screen character preview lazily, so the title paints before three.js loads, especially on phones.
+4. Check rendering and frame rate on a real GPU and phone.
 
 ## Known issues
 
