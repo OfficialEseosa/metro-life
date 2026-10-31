@@ -99,15 +99,18 @@ final class Economy {
             if (level.path("level").asInt() == job.path("level").asInt()) pay = level.path("payPerHour").asDouble();
       }
     }
-    int day = g.civic.day(w);
-    long next = g.civic.dayAt(w, day + 1);
+    int day = g.civic.day(w),
+      nextDay = Math.max(day + 1, s.path("home").path("rentPaidThrough").asInt() + 1);
+    long next = g.civic.dayAt(w, nextDay);
     boolean low = s.path("cash").asDouble() < rent + food + s.path("rentDebt").asDouble();
     ObjectNode forecast = out
       .putObject("forecast")
       .put("rent", rent)
+      .put("rentEveryDays", Content.RENT_EVERY_DAYS)
       .put("food", food)
       .put("expectedPay", pay)
-      .put("dailyNet", pay - rent - food)
+      .put("dailyNet", dailyNet(pay, rent, food))
+      .put("nextRentDay", nextDay)
       .put("nextRentAt", next)
       .put("rentDebt", s.path("rentDebt").asDouble())
       .put("lowRent", low)
@@ -125,14 +128,22 @@ final class Economy {
     return out;
   }
 
+  /**
+   * What one game day leaves on average: one shift, minus that day's share of the rent (paid once every
+   * {@link Content#RENT_EVERY_DAYS} days), minus two meals out. Rounded to the cent.
+   */
+  static double dailyNet(double pay, double rent, double food) {
+    return Math.round((pay - rent / Content.RENT_EVERY_DAYS - food) * 100) / 100.0;
+  }
+
   /** Saving left after rent and meals that makes a home sustainable on one shift a day. */
   static double minimumSaving(double pay) {
     return Math.max(10, Math.round(pay * .15));
   }
 
   /**
-   * What each home in the player's home city would leave per day on one healthy shift and two meals
-   * out, and the one upgrade worth suggesting: the cheapest home dearer than the current one that
+   * What each home in the player's home city would leave per game day on one healthy shift, its share
+   * of the rent and two meals out, and the one upgrade worth suggesting: the cheapest home dearer than the current one that
    * still leaves a real saving. No job, or no such home, means no suggestion.
    */
   void homes(ObjectNode s, ObjectNode forecast, double pay, double food) {
@@ -144,7 +155,7 @@ final class Economy {
     ObjectNode upgrade = null;
     for (JsonNode nh : g.content.city(city).path("neighborhoods")) {
       double rent = nh.path("rent").asDouble(),
-        net = pay - rent - food;
+        net = dailyNet(pay, rent, food);
       boolean here = nh.path("id").asText().equals(s.path("home").path("neighborhood").asText()) && !studio,
         sustainable = pay > 0 && net >= saving;
       ObjectNode row = homes
@@ -164,7 +175,8 @@ final class Economy {
       return;
     }
     double deposit = upgrade.path("rent").asDouble(),
-      // The deposit plus one more day of rent and meals, so moving never leaves the player short.
+      // The deposit (the first rent payment) plus the next one and a day of meals, so moving never leaves
+      // the player short.
       needed = deposit + upgrade.path("rent").asDouble() + food + s.path("rentDebt").asDouble();
     forecast
       .putObject("upgrade")

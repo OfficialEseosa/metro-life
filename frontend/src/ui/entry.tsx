@@ -43,7 +43,7 @@ export function Intro() {
     },
     {
       title: "A little to live on",
-      text: `You have $150. Your studio costs ${money(sim.home.rent)} a day. Entry shifts here pay ${money(city.startingLife?.payPerShift ?? 70)}. Make time for a meal and a roof over your head.`,
+      text: `You have $150. Your studio costs ${money(sim.home.rent)} every three days, and the first three are paid. Entry shifts here pay ${money(city.startingLife?.payPerShift ?? 70)}. Make time for a meal and a roof over your head.`,
       icon: "wallet",
     },
     {
@@ -131,7 +131,7 @@ const GOALS: { id: FirstDayStep; label: string; hint: string; icon: string }[] =
     {
       id: "rent",
       label: "Pay your first rent",
-      hint: "Rent is taken at midnight. You can also pay ahead from Your life.",
+      hint: "Rent is taken at midnight every third day. You can also pay ahead from Your life.",
       icon: "house",
     },
   ];
@@ -230,9 +230,9 @@ export function FirstDayGoals({ compact = false }: { compact?: boolean }) {
       <p className="first-day-time">
         <Icon name="clock" size={20} />
         <span>
-          A game day lasts about seven real minutes. Rent is taken at midnight,
-          places keep opening hours and needs fall as hours pass. Tap the clock
-          for more.
+          A game day lasts about seven real minutes. Rent is taken every third
+          midnight, places keep opening hours and needs fall slowly as hours
+          pass. Tap the clock for more.
         </span>
       </p>
       {GOALS.map((g) => (
@@ -251,7 +251,7 @@ export function FirstDayGoals({ compact = false }: { compact?: boolean }) {
             <strong>{g.label}</strong>
             <small>
               {g.id === "rent"
-                ? `${money(sim.home.rent)} a day, taken at midnight. You can also pay ahead from Your life.`
+                ? `${money(sim.home.rent)} every three days, taken at midnight. You can also pay ahead from Your life.`
                 : g.hint}
             </small>
           </span>
@@ -459,8 +459,8 @@ export function FirstDayClosing() {
           <p>
             <strong>Next: save for a better home.</strong>
             <br />
-            {goal.name} is {money(goal.rent)} a day and one shift a day can
-            carry it.{" "}
+            {goal.name} is {money(goal.rent)} every three days and one shift a
+            day can carry it.{" "}
             {goal.missing > 0
               ? `Save ${money(goal.missing)} more to move there.`
               : "You have enough to move there now."}

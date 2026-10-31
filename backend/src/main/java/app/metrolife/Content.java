@@ -14,8 +14,12 @@ public class Content {
   final JsonNode transit;
   static final String[] SKILLS = { "fitness", "cooking", "music", "tech", "charisma", "creativity", "business" };
   static final String[] NEEDS = { "energy", "hunger", "fun", "social", "hygiene" };
-  /** Need loss per game hour, in NEEDS order. A game day is seven real minutes, so these stay gentle. */
-  static final double[] NEED_RATES = { .45, .55, .42, .36, .4 };
+  /**
+   * Need loss per game hour, in NEEDS order. A game day is about seven real minutes, so an hour of real
+   * play is over eight game days: at these rates an idle new life (needs at 85) still sits above the
+   * red line (25) after a real hour, and actions remain the main way needs move.
+   */
+  static final double[] NEED_RATES = { .2, .24, .18, .16, .18 };
   static final String[] TRACKS = { "tech", "music", "sports", "food", "finance", "arts", "civic", "health" };
   static final String[] ASPIRATIONS = {
     "founder",
@@ -135,7 +139,7 @@ public class Content {
       "Parks stay open until midnight.",
       "Work activities pay 5% more.",
       "Culture activities are free after 18:00 and open until midnight.",
-      "Daily rent is reduced by 20%.",
+      "Rent is reduced by 20%.",
       "Nightlife venues stay open until 04:00.",
     };
     int policyIndex = 0;
@@ -474,10 +478,14 @@ public class Content {
     return city.equals("atl") ? 15 : city.equals("nyc") ? 22 : 25;
   }
 
+  /** Rent falls due once every this many game days (about 21 real minutes); each payment covers them all. */
+  static final int RENT_EVERY_DAYS = 3;
+
   /**
-   * Daily rent of a city's neighbourhoods, in content order: the first is the starter studio, then
-   * each step costs a share of one entry shift. The first upgrade leaves an entry-level worker who
-   * eats out twice about a third of a shift to save each day; the dearest ones wait for promotions.
+   * Rent of a city's neighbourhoods for one rent period ({@link #RENT_EVERY_DAYS} game days), in content
+   * order: the first is the starter studio, then each step costs a share of one entry shift. Even the
+   * dearest home leaves an entry-level worker who works one shift a day and eats out twice a real
+   * saving; dearer homes mostly mean a bigger bill every third day.
    */
   static final double[] RENT_SHARE = { 0, .36, .42, .5, .6, .72 };
 

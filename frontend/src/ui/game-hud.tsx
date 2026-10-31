@@ -92,14 +92,19 @@ function Time() {
   );
 }
 
-/** What the fast clock means: the length of a day, rent at midnight, opening hours and needs. */
+/** What the fast clock means: the length of a day, rent every third day, opening hours and needs. */
 function ClockDetail({ close }: { close: () => void }) {
   const clock = useStore((s) => s.clock),
     rent = useStore((s) => s.sim?.home.rent ?? 0),
+    paidThrough = useStore((s) => s.sim?.home.rentPaidThrough ?? 0),
+    rentEvery = useStore((s) => s.sim?.economy?.forecast.rentEveryDays ?? 3),
     now = useNow();
   if (!clock) return null;
-  const minutes = clockMinutes(clock, now) % 1440,
-    toMidnight = 1440 - minutes,
+  const total = clockMinutes(clock, now),
+    minutes = total % 1440,
+    day = clock.day + Math.floor(total / 1440),
+    // Rent falls due at the midnight after the last paid day.
+    toRent = 1440 - minutes + 1440 * Math.max(0, paidThrough - day),
     fast = clock.msPerMinute < 1000,
     realMinutes = (m: number) => (m * clock.msPerMinute) / 60000;
   return (
@@ -121,11 +126,12 @@ function ClockDetail({ close }: { close: () => void }) {
         <li>
           <Icon name="moon" size={20} />
           <span>
-            Rent{rent ? ` of ${money(rent)}` : ""} is taken at midnight, in{" "}
-            {Math.floor(toMidnight / 60)}h {toMidnight % 60}m
+            Rent{rent ? ` of ${money(rent)}` : ""} is taken at midnight every{" "}
+            {rentEvery === 1 ? "day" : `${rentEvery} days`}. Next on day{" "}
+            {day + Math.ceil(toRent / 1440)},{" "}
             {fast
-              ? ` (about ${Math.max(1, Math.round(realMinutes(toMidnight)))} real min)`
-              : ""}
+              ? `in about ${Math.max(1, Math.round(realMinutes(toRent)))} real minutes`
+              : `in ${Math.floor(toRent / 60)}h ${toRent % 60}m`}
             .
           </span>
         </li>

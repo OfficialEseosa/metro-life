@@ -335,7 +335,10 @@ public class GameService {
     require(s.path("cash").asDouble() >= rent, 402, "You need $" + rent + " for rent");
     property.pay(s, rent, "First home rent");
     int day = clock(w).path("day").asInt();
-    s.withObject("home").put("rentPaidThrough", Math.max(day, s.path("home").path("rentPaidThrough").asInt(day)) + 1);
+    s.withObject("home").put(
+      "rentPaidThrough",
+      Math.max(day, s.path("home").path("rentPaidThrough").asInt(day)) + Content.RENT_EVERY_DAYS
+    );
     firstDay.mark(s, "rent");
     store.save();
     return simResponse(s, w);
@@ -619,8 +622,11 @@ public class GameService {
     Personality.setup(s, body.get("traits"));
     resetDaily(s);
     firstDay.init(s, world(session));
-    // A new life settles in rent-free for its first two game days (about fourteen real minutes).
-    s.withObject("home").put("rentPaidThrough", clock(world(session)).path("day").asInt() + 2);
+    // A new life's first rent period (today and the next two game days, about twenty real minutes) is prepaid.
+    s.withObject("home").put(
+      "rentPaidThrough",
+      clock(world(session)).path("day").asInt() + Content.RENT_EVERY_DAYS - 1
+    );
     store.save();
     return simResponse(s, world(session));
   }

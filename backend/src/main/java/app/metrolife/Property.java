@@ -297,6 +297,8 @@ final class Property {
           rate * .8
         );
         s.put("rentDebt", s.path("rentDebt").asDouble() + rate);
+        // One payment covers this day and the rest of its rent period.
+        s.withObject("home").put("rentPaidThrough", day + Content.RENT_EVERY_DAYS - 1);
       }
     }
     if (starter) s.put("rentDebt", Math.min(s.path("rentDebt").asDouble(), s.path("home").path("rent").asDouble() * 2));
@@ -305,7 +307,7 @@ final class Property {
       Math.max(0, s.path("cash").asDouble() - s.path("_pendingAction").path("cost").asDouble() - (starter ? 12 : 0))
     );
     if (payment > 0) {
-      pay(s, payment, "Daily home rent");
+      pay(s, payment, "Home rent for " + Content.RENT_EVERY_DAYS + " days");
       s.put("rentDebt", s.path("rentDebt").asDouble() - payment);
       if (s.path("rentDebt").asDouble() == 0) g.firstDay.mark(s, "rent");
     }
@@ -327,9 +329,21 @@ final class Property {
     GameService.require(s.path("rentDebt").asDouble() == 0, 402, "Clear your rent balance before moving");
     int deposit = target.path("rent").asInt();
     confirm(body, deposit);
-    GameService.require(s.path("cash").asDouble() >= deposit, 402, "Moving costs one day's rent: $" + deposit);
+    GameService.require(
+      s.path("cash").asDouble() >= deposit,
+      402,
+      "Moving costs one rent payment: $" + deposit
+    );
     pay(s, deposit, "Home moving deposit");
-    s.putObject("home").put("city", city).put("neighborhood", nh).put("rent", deposit);
+    // The deposit is the first rent payment: it covers today and the rest of this rent period.
+    s.putObject("home")
+      .put("city", city)
+      .put("neighborhood", nh)
+      .put("rent", deposit)
+      .put(
+        "rentPaidThrough",
+        g.civic.day((ObjectNode) g.table("worlds").get(s.path("worldId").asText())) + Content.RENT_EVERY_DAYS - 1
+      );
     s.put("loc", "home");
     s.remove(java.util.List.of("position", "_outside"));
     s.putNull("activitySlot");
