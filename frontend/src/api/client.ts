@@ -325,7 +325,7 @@ export const api = {
     if (!home) throw new ApiError(0, "Choose a listed neighbourhood");
     await approvePurchase(
       home.rent,
-      `Move your home to ${home.name}, ${c?.name ?? city}. One daily rent deposit; future daily rent is $${home.rent}.`,
+      `Move your home to ${home.name}, ${c?.name ?? city}. This pays the first three days; after that rent is $${home.rent} every three days.`,
     );
     return purchased(
       await req<{ sim: Sim }>("POST", "/api/home/move", {

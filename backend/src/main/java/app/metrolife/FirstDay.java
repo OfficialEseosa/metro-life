@@ -8,9 +8,9 @@ final class FirstDay {
 
   static final List<String> STEPS = List.of("outside", "job", "shift", "meal", "neighbour", "rent");
   /**
-   * The steps a player completes by playing. Rent is charged automatically (and is free for the first
-   * two game days), so it is tracked but never holds back city space: the first day is reachable in
-   * about ten minutes of play.
+   * The steps a player completes by playing. Rent is charged automatically every third game day (and the
+   * first three days are prepaid), so it is tracked but never holds back city space: the first day is
+   * reachable in about ten minutes of play.
    */
   static final List<String> REQUIRED = List.of("outside", "job", "shift", "meal", "neighbour");
   static final java.util.Map<String, String> LABELS = java.util.Map.of(
@@ -35,7 +35,7 @@ final class FirstDay {
     s.put("introDone", false).put("arrivalDay", g.clock(w).path("day").asInt());
     ObjectNode goals = s.putObject("firstDay").put("complete", false);
     for (String step : STEPS) goals.put(step, false);
-    // The starter studio's first two game days are prepaid, so the rent step starts done.
+    // The starter studio's first rent period is prepaid, so the rent step starts done.
     goals.put("rent", true);
     s.putObject("outfits").put("casual", true).put("street", true);
   }

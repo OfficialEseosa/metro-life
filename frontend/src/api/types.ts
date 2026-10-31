@@ -305,7 +305,7 @@ export type Sim = {
     city: CityId;
     neighborhood: string;
     rent: number;
-    /** game day through which rent is already paid (first rent) */
+    /** last game day already covered by rent; the next rent is taken at the midnight after it */
     rentPaidThrough?: number;
   };
   cash: number;
@@ -644,13 +644,15 @@ export type SocialKind = "wave" | "hangout" | "gift";
 
 /**
  * One home in the player's home city as the server's daily budget sees it (`sim.economy.forecast.homes`):
- * one healthy shift a day minus rent and two meals out.
+ * one healthy shift a day minus that day's share of the rent (due every third day) and two meals out.
  */
 export type HomeBudget = {
   city: CityId;
   neighborhood: string;
   name: string;
+  /** charged once every three game days */
   rent: number;
+  /** average per game day */
   dailyNet: number;
   /** leaves a real saving on one shift a day */
   sustainable: boolean;
@@ -665,7 +667,7 @@ export type HomeUpgrade = {
   rent: number;
   deposit: number;
   dailyNet: number;
-  /** deposit plus a day of rent and meals (and any rent owed) */
+  /** deposit plus the next rent and a day of meals (and any rent owed) */
   cashNeeded: number;
   ready: boolean;
 };

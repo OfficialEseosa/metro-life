@@ -79,7 +79,7 @@ export function StartCity({
                 <span>{neighborhood.name} studio</span>
                 <dl>
                   <div>
-                    <dt>Daily rent</dt>
+                    <dt>Rent every 3 days</dt>
                     <dd>{money(rent)}</dd>
                   </div>
                   <div>

@@ -862,9 +862,9 @@ export function HomesPanel() {
   return (
     <>
       <p>
-        Rent is charged each game midnight. Moving costs one day's rent upfront;
-        daily rent starts at the next midnight. A trip is always a visit until
-        you confirm a move here.
+        Rent is charged at midnight every three game days. Moving pays the first
+        rent upfront, which covers the day you move and the next two. A trip is
+        always a visit until you confirm a move here.
       </p>
       {sim && (
         <div className="civic-hero">
@@ -879,7 +879,7 @@ export function HomesPanel() {
                 ?.neighborhoods.find((n) => n.id === sim.home.neighborhood)
                 ?.name
             }{" "}
-            · {money(sim.home.rent)} per game day
+            · {money(sim.home.rent)} every three game days
           </p>
           {sim.city !== sim.home.city && (
             <p>
@@ -915,7 +915,8 @@ export function HomesPanel() {
             <div>
               <h3>{n.name}</h3>
               <p>
-                {money(n.rent)} per game day · {money(n.rent)} upfront to move
+                {money(n.rent)} every three game days · {money(n.rent)} upfront
+                to move
               </p>
               {(() => {
                 const b = budgetFor(n.id);
@@ -926,8 +927,8 @@ export function HomesPanel() {
                     className={`home-net ${net >= 0 ? "gain" : "loss"}`}
                     data-testid="home-daily-net"
                   >
-                    {net >= 0 ? "+" : "-"}${Math.abs(net)} a day after one shift
-                    and meals
+                    {net >= 0 ? "+" : "-"}${Math.abs(net)} a game day after one
+                    shift, meals and rent
                   </p>
                 );
               })()}
@@ -959,9 +960,9 @@ export function HomesPanel() {
             Make {choice.name}, {destination?.name} your home?
           </h3>
           <p>
-            This replaces your current lease. Pay {money(choice.rent)} now, then{" "}
-            {money(choice.rent)} each game midnight. Travelling here alone never
-            changes your home.
+            This replaces your current lease. Pay {money(choice.rent)} now for
+            the first three game days, then {money(choice.rent)} every third
+            midnight. Travelling here alone never changes your home.
           </p>
           {budgetFor(choice.id) && budgetLine(sim, choice.id) && (
             <p
@@ -978,7 +979,7 @@ export function HomesPanel() {
           {sim && sim.cash - choice.rent < choice.rent && (
             <p className="notice">
               After this move you would have {money(sim.cash - choice.rent)}{" "}
-              left, less than the next day's rent.
+              left, less than the next rent.
             </p>
           )}
           <div className="travel-review-actions">

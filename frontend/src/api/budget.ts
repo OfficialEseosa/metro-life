@@ -2,6 +2,7 @@ import type { HomeBudget, HomeUpgrade, Sim } from "./types";
 
 type Forecast = {
   expectedPay?: number;
+  rentEveryDays?: number;
   food?: number;
   homes?: HomeBudget[];
   upgrade?: HomeUpgrade | null;
@@ -28,13 +29,15 @@ export function homeUpgrade(sim: Sim | null | undefined): HomeUpgrade | null {
 }
 
 /**
- * One line for a move review, e.g. "Each day here: +$21 after a $70 shift, $25 rent and $24 meals."
- * Empty without a job (there is no shift to count on).
+ * One line for a move review, e.g. "Each game day here: +$38 after a $70 shift, $24 meals and $8
+ * toward the $25 rent due every 3 days." The figures are a game-day average. Empty without a job
+ * (there is no shift to count on).
  */
 export function budgetLine(sim: Sim | null | undefined, neighborhood: string) {
   const f = forecast(sim),
     home = homeBudget(sim, neighborhood);
   if (!f || !home || !f.expectedPay) return "";
   const sign = home.dailyNet >= 0 ? "+" : "-";
-  return `Each day here: ${sign}${dollars(home.dailyNet)} after a ${dollars(f.expectedPay)} shift, ${dollars(home.rent)} rent and ${dollars(f.food ?? 0)} meals.`;
+  const every = f.rentEveryDays ?? 3;
+  return `Each game day here: ${sign}${dollars(home.dailyNet)} after a ${dollars(f.expectedPay)} shift, ${dollars(f.food ?? 0)} meals and ${dollars(home.rent / every)} toward the ${dollars(home.rent)} rent due every ${every} days.`;
 }
